@@ -82,4 +82,12 @@
         @apply break-words text-sm leading-relaxed text-navy-800 [overflow-wrap:anywhere];
         word-break: normal;
     }
+
+    .thumb {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 0.75rem;
+        flex-shrink: 0;
+    }
 }

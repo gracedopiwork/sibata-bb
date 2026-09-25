@@ -27,7 +27,7 @@
                     <td class="px-3 py-3">
                         @if($loan->hasLoanPhoto())
                             <a href="{{ $loan->loanPhotoUrl() }}" target="_blank">
-                                <img class="h-16 w-16 rounded-lg object-cover" src="{{ $loan->loanPhotoUrl() }}" alt="Foto pinjam">
+                                <img class="thumb ring-1 ring-navy-100" src="{{ $loan->loanPhotoUrl() }}" alt="Foto pinjam" width="64" height="64">
                             </a>
                         @else
                             <span class="text-navy-500">—</span>
@@ -36,7 +36,7 @@
                     <td class="px-3 py-3">
                         @if($loan->hasReturnPhoto())
                             <a href="{{ $loan->returnPhotoUrl() }}" target="_blank">
-                                <img class="h-16 w-16 rounded-lg object-cover" src="{{ $loan->returnPhotoUrl() }}" alt="Foto kembali">
+                                <img class="thumb ring-1 ring-navy-100" src="{{ $loan->returnPhotoUrl() }}" alt="Foto kembali" width="64" height="64">
                             </a>
                         @else
                             <span class="text-navy-500">—</span>
