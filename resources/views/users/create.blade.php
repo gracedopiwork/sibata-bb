@@ -2,7 +2,7 @@
 
 @section('title', 'Tambah Pengguna')
 @section('heading', 'Tambah Pengguna')
-@section('subheading', 'Kode lisensi dibuat otomatis setelah akun disimpan. Tanpa kode itu, pengguna tidak bisa masuk portal.')
+@section('subheading', 'Kode lisensi dibuat otomatis setelah akun disimpan. Kode itu diaktifkan di bot Telegram, bukan di login portal.')
 
 @section('content')
 <div class="card max-w-2xl">

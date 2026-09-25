@@ -161,6 +161,7 @@ class TelegramService
             ['command' => 'eksekusi', 'description' => 'Catat putusan per item'],
             ['command' => 'rekap', 'description' => 'Ringkasan gudang'],
             ['command' => 'batal', 'description' => 'Batalkan proses'],
+            ['command' => 'lisensi', 'description' => 'Aktifkan akses bot dengan kode lisensi'],
             ['command' => 'id', 'description' => 'Tampilkan ID Telegram / grup'],
         ];
     }

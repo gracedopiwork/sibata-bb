@@ -34,7 +34,7 @@ class UserController extends Controller
         $user = User::query()->create($data);
 
         return redirect()->route('users.index')->with([
-            'status' => 'Pengguna berhasil ditambahkan. Berikan kode lisensi kepada yang bersangkutan.',
+            'status' => 'Pengguna berhasil ditambahkan. Berikan kode lisensi untuk diaktifkan di bot Telegram.',
             'issued_license' => $user->license_key,
             'issued_license_user' => $user->name,
         ]);
@@ -89,7 +89,7 @@ class UserController extends Controller
 
         $user->revokeLicense();
 
-        return redirect()->route('users.index')->with('status', 'Lisensi '.$user->name.' dicabut. Akun ini tidak dapat masuk portal.');
+        return redirect()->route('users.index')->with('status', 'Lisensi '.$user->name.' dicabut. Bot Telegram akun ini tidak dapat dipakai.');
     }
 
     public function restoreLicense(User $user): RedirectResponse

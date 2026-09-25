@@ -29,4 +29,11 @@ enum UserRole: string
     {
         return $this === self::Admin;
     }
+
+    public function telegramRole(): TelegramAccessRole
+    {
+        return match ($this) {
+            self::Admin, self::PetugasPb3r => TelegramAccessRole::AdminPb3r,
+        };
+    }
 }

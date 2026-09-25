@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
-use App\Services\UserLicense;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +25,6 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
-            'license_key' => ['required', 'string', 'max:40'],
         ];
     }
 
@@ -44,17 +42,6 @@ class LoginRequest extends FormRequest
 
         /** @var User $user */
         $user = Auth::user();
-
-        $providedLicense = UserLicense::normalize($this->input('license_key'));
-
-        if (! $user->hasValidLicense() || ! hash_equals((string) $user->license_key, $providedLicense)) {
-            Auth::logout();
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'email' => 'Email, kata sandi, atau kode lisensi tidak sesuai.',
-            ]);
-        }
 
         if (! $user->is_active) {
             Auth::logout();

@@ -26,7 +26,7 @@
 <div class="md:col-span-2">
     <label class="flex items-center gap-2 text-sm">
         <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $user?->is_active ?? true))>
-        Akun aktif (admin berlisensi: dashboard · petugas: bot Telegram)
+        Akun aktif (admin: dashboard · petugas: bot Telegram + lisensi)
     </label>
 </div>
 <div>

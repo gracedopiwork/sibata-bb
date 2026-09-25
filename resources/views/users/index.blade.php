@@ -2,13 +2,13 @@
 
 @section('title', 'Pengguna & Lisensi')
 @section('heading', 'Pengguna & Lisensi')
-@section('subheading', 'Setiap akun yang dibuat admin mendapat kode lisensi. Tanpa kode itu, portal tidak bisa dimasuki.')
+@section('subheading', 'Setiap akun mendapat kode lisensi untuk bot Telegram. Tanpa kode itu, bot tidak bisa dipakai.')
 
 @section('content')
 @if (session('issued_license'))
     <div class="mb-4 rounded-2xl border border-gold-400/40 bg-gold-400/10 px-5 py-4">
         <p class="text-xs font-bold uppercase tracking-wider text-gold-700">Kode lisensi baru</p>
-        <p class="mt-1 text-sm text-navy-800">Berikan kode ini kepada <b>{{ session('issued_license_user') }}</b>. Kode diperlukan saat masuk dashboard.</p>
+        <p class="mt-1 text-sm text-navy-800">Berikan kode ini kepada <b>{{ session('issued_license_user') }}</b>. Di Telegram ketik <code class="font-mono">/lisensi KODE</code>.</p>
         <p class="mt-3 font-mono text-lg font-semibold tracking-wider text-navy-900">{{ session('issued_license') }}</p>
     </div>
 @endif

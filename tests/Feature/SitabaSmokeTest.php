@@ -56,35 +56,18 @@ class SitabaSmokeTest extends TestCase
         $this->post('/login', [
             'email' => $petugas->email,
             'password' => 'password',
-            'license_key' => $petugas->license_key,
         ])->assertSessionHasErrors('email');
 
         $this->assertGuest();
     }
 
-    public function test_admin_login_requires_valid_license(): void
+    public function test_admin_can_login_without_license(): void
     {
         $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
 
         $this->post('/login', [
             'email' => $admin->email,
             'password' => 'password',
-        ])->assertSessionHasErrors('license_key');
-
-        $this->assertGuest();
-
-        $this->post('/login', [
-            'email' => $admin->email,
-            'password' => 'password',
-            'license_key' => 'SITABA-SALAH-XXXX-XXXX',
-        ])->assertSessionHasErrors('email');
-
-        $this->assertGuest();
-
-        $this->post('/login', [
-            'email' => $admin->email,
-            'password' => 'password',
-            'license_key' => $admin->license_key,
         ])->assertRedirect('/dashboard');
 
         $this->assertAuthenticatedAs($admin);
@@ -117,13 +100,30 @@ class SitabaSmokeTest extends TestCase
         $created?->delete();
     }
 
-    public function test_revoked_license_cannot_login(): void
+    public function test_bot_license_can_be_redeemed_and_revoked(): void
     {
         $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
         $target = User::factory()->create([
-            'role' => UserRole::Admin,
+            'role' => UserRole::PetugasPb3r,
             'is_active' => true,
             'password' => 'password',
+        ]);
+
+        $this->postJson('/api/telegram/webhook', [
+            'message' => [
+                'from' => ['id' => 555666777, 'first_name' => 'Petugas'],
+                'chat' => ['id' => 555666777],
+                'text' => '/lisensi '.$target->license_key,
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $target->id,
+            'telegram_id' => 555666777,
+        ]);
+        $this->assertDatabaseHas('telegram_whitelist', [
+            'telegram_chat_id' => '555666777',
+            'is_active' => 1,
         ]);
 
         $this->actingAs($admin)
@@ -131,16 +131,10 @@ class SitabaSmokeTest extends TestCase
             ->assertRedirect('/users');
 
         $this->assertFalse($target->fresh()->hasValidLicense());
-
-        $this->post('/logout');
-
-        $this->post('/login', [
-            'email' => $target->email,
-            'password' => 'password',
-            'license_key' => $target->license_key,
-        ])->assertSessionHasErrors('email');
-
-        $this->assertGuest();
+        $this->assertDatabaseHas('telegram_whitelist', [
+            'telegram_chat_id' => '555666777',
+            'is_active' => 0,
+        ]);
 
         $target->delete();
     }

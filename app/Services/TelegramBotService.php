@@ -12,6 +12,7 @@ use App\Models\PhysicalUnit;
 use App\Models\TelegramConversation;
 use App\Models\TelegramWhitelist;
 use App\Models\UnitItem;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -109,6 +110,18 @@ class TelegramBotService
                     ? "ID grup ini: <code>{$chatId}</code>\nID Telegram Anda: <code>{$telegramId}</code>"
                     : "ID Telegram Anda: <code>{$telegramId}</code>"
             );
+
+            return;
+        }
+
+        if ($this->isLicenseCommand($text)) {
+            if ($isGroup) {
+                $this->reply($chatId, 'Aktifkan lisensi di chat pribadi bot, bukan di grup.');
+
+                return;
+            }
+
+            $this->redeemLicense($telegramId, $chatId, $text, $from);
 
             return;
         }
@@ -1354,6 +1367,19 @@ class TelegramBotService
         $actor = TelegramWhitelist::findActive($telegramId);
 
         if ($actor !== null) {
+            $linked = User::query()->where('telegram_id', $telegramId)->first();
+
+            if ($linked !== null && (! $linked->is_active || ! $linked->hasValidLicense())) {
+                if (! $silent) {
+                    $this->reply(
+                        $chatId,
+                        'Lisensi bot Anda tidak berlaku. Hubungi admin portal untuk menerbitkan ulang, lalu ketik /lisensi KODE.'
+                    );
+                }
+
+                return null;
+            }
+
             return $actor;
         }
 
@@ -1375,7 +1401,7 @@ class TelegramBotService
         if (! $silent) {
             $this->reply(
                 $chatId,
-                'Maaf, akses ditolak. Akun Telegram Anda belum masuk daftar putih SITABA-BB Kejari Wajo. Hubungi Admin PB3R atau ketik /id lalu daftarkan Chat ID di portal web.'
+                'Akses bot ditolak. Minta kode lisensi ke admin portal, lalu ketik:\n<code>/lisensi SITABA-XXXX-XXXX-XXXX</code>'
             );
         }
 
@@ -1417,13 +1443,74 @@ class TelegramBotService
         return true;
     }
 
+    private function isLicenseCommand(string $text): bool
+    {
+        return str_starts_with($text, '/lisensi') || $this->extractLicenseKey($text) !== null;
+    }
+
+    private function extractLicenseKey(string $text): ?string
+    {
+        $normalized = UserLicense::normalize($text);
+        $normalized = (string) preg_replace('/^\/LISENSI/', '', $normalized);
+
+        if (preg_match('/SITABA(?:-[A-Z0-9]+){2,}/', $normalized, $matches) === 1) {
+            return $matches[0];
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $from
+     */
+    private function redeemLicense(int $telegramId, int|string $chatId, string $text, array $from): void
+    {
+        $key = $this->extractLicenseKey($text);
+
+        if ($key === null) {
+            $this->reply($chatId, 'Kirim kode lisensi dari admin portal.\nContoh: <code>/lisensi SITABA-XXXX-XXXX-XXXX</code>');
+
+            return;
+        }
+
+        $user = User::query()->where('license_key', $key)->first();
+
+        if ($user === null || ! $user->hasValidLicense() || ! $user->is_active) {
+            $this->reply($chatId, 'Kode lisensi tidak valid atau sudah dicabut. Hubungi administrator portal.');
+
+            return;
+        }
+
+        if ($user->telegram_id && (int) $user->telegram_id !== $telegramId) {
+            $this->reply($chatId, 'Kode lisensi ini sudah terpasang di akun Telegram lain.');
+
+            return;
+        }
+
+        $user->forceFill(['telegram_id' => $telegramId])->save();
+
+        TelegramWhitelist::query()->updateOrCreate(
+            ['telegram_chat_id' => (string) $telegramId],
+            [
+                'user_name' => $user->name,
+                'role' => $user->role->telegramRole(),
+                'is_active' => true,
+            ]
+        );
+
+        $this->reply(
+            $chatId,
+            "✅ Lisensi bot aktif untuk <b>{$this->e($user->name)}</b> ({$user->role->label()}).\n\nKetik /start untuk membuka menu."
+        );
+    }
+
     private function welcomeText(TelegramWhitelist $actor, bool $inGroup = false): string
     {
         $extra = $inGroup ? "\n/id — tampilkan ID grup ini" : '';
 
         return "Selamat datang di <b>SITABA-BB</b>, {$this->e($actor->user_name)} ({$actor->role->label()}).\n\n"
             ."Sistem Informasi Tata Kelola Barang Bukti — Seksi PB3R Kejari Wajo.\n\n"
-            ."Perintah:\n/tambah /cari /pinjam /kembali /eksekusi /rekap\n/batal — batalkan proses{$extra}";
+            ."Perintah:\n/tambah /cari /pinjam /kembali /eksekusi /rekap\n/lisensi — aktifkan akses bot\n/batal — batalkan proses{$extra}";
     }
 
     /**

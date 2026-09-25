@@ -105,6 +105,12 @@ class User extends Authenticatable
         $this->forceFill([
             'license_revoked_at' => now(),
         ])->save();
+
+        if ($this->telegram_id) {
+            TelegramWhitelist::query()
+                ->where('telegram_chat_id', (string) $this->telegram_id)
+                ->update(['is_active' => false]);
+        }
     }
 
     public function restoreLicense(): void
@@ -112,5 +118,11 @@ class User extends Authenticatable
         $this->forceFill([
             'license_revoked_at' => null,
         ])->save();
+
+        if ($this->telegram_id) {
+            TelegramWhitelist::query()
+                ->where('telegram_chat_id', (string) $this->telegram_id)
+                ->update(['is_active' => true]);
+        }
     }
 }
