@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 640" width="1100" height="640">
+  <rect width="1100" height="640" fill="#ffffff"/>
+  <text x="550" y="28" text-anchor="middle" font-family="Times New Roman, serif" font-size="16" font-weight="bold">Gambar 3.1c  Diagram kelas UML SITABA-BB</text>
+  <style>
+    .cls { fill:#fff; stroke:#111; stroke-width:1.4; }
+    .hd { font-family:Times New Roman, serif; font-size:13px; font-weight:bold; text-anchor:middle; }
+    .at { font-family:Times New Roman, serif; font-size:11px; }
+    .rel { stroke:#111; stroke-width:1.2; fill:none; }
+  </style>
+
+  <!-- LegalCase -->
+  <g transform="translate(40,70)">
+    <rect class="cls" width="240" height="200"/>
+    <line x1="0" y1="28" x2="240" y2="28" stroke="#111"/>
+    <text class="hd" x="120" y="20">LegalCase</text>
+    <text class="at" x="10" y="48">+ case_number : string</text>
+    <text class="at" x="10" y="66">+ defendant_name : string</text>
+    <text class="at" x="10" y="84">+ prosecutor_name : string</text>
+    <text class="at" x="10" y="102">+ case_status : enum</text>
+    <text class="at" x="10" y="120">+ notes : string</text>
+    <line x1="0" y1="132" x2="240" y2="132" stroke="#111"/>
+    <text class="at" x="10" y="152">+ physicalUnits()</text>
+  </g>
+
+  <!-- PhysicalUnit -->
+  <g transform="translate(430,50)">
+    <rect class="cls" width="250" height="250"/>
+    <line x1="0" y1="28" x2="250" y2="28" stroke="#111"/>
+    <text class="hd" x="125" y="20">PhysicalUnit</text>
+    <text class="at" x="10" y="48">+ unit_code : string</text>
+    <text class="at" x="10" y="66">+ unit_type : SINGLE|PACK</text>
+    <text class="at" x="10" y="84">+ storage_location : string</text>
+    <text class="at" x="10" y="102">+ photo_path : string</text>
+    <text class="at" x="10" y="120">+ current_status : enum</text>
+    <text class="at" x="10" y="138">+ is_printed : boolean</text>
+    <line x1="0" y1="150" x2="250" y2="150" stroke="#111"/>
+    <text class="at" x="10" y="170">+ items()</text>
+    <text class="at" x="10" y="188">+ mutations()</text>
+    <text class="at" x="10" y="206">+ nextUnitCode()</text>
+  </g>
+
+  <!-- UnitItem -->
+  <g transform="translate(830,50)">
+    <rect class="cls" width="250" height="250"/>
+    <line x1="0" y1="28" x2="250" y2="28" stroke="#111"/>
+    <text class="hd" x="125" y="20">UnitItem</text>
+    <text class="at" x="10" y="48">+ item_name : string</text>
+    <text class="at" x="10" y="66">+ category : enum</text>
+    <text class="at" x="10" y="84">+ quantity : string</text>
+    <text class="at" x="10" y="102">+ verdict_status : enum</text>
+    <text class="at" x="10" y="120">+ execution_ba_number</text>
+    <text class="at" x="10" y="138">+ execution_recipient</text>
+    <text class="at" x="10" y="156">+ execution_date : date</text>
+    <line x1="0" y1="170" x2="250" y2="170" stroke="#111"/>
+    <text class="at" x="10" y="190">+ physicalUnit()</text>
+  </g>
+
+  <!-- Mutation -->
+  <g transform="translate(430,360)">
+    <rect class="cls" width="250" height="170"/>
+    <line x1="0" y1="28" x2="250" y2="28" stroke="#111"/>
+    <text class="hd" x="125" y="20">Mutation</text>
+    <text class="at" x="10" y="48">+ mutation_type : enum</text>
+    <text class="at" x="10" y="66">+ borrower_name : string</text>
+    <text class="at" x="10" y="84">+ court_date : date</text>
+    <text class="at" x="10" y="102">+ notes : string</text>
+    <text class="at" x="10" y="120">+ handled_by : string</text>
+    <line x1="0" y1="132" x2="250" y2="132" stroke="#111"/>
+    <text class="at" x="10" y="152">+ physicalUnit()</text>
+  </g>
+
+  <!-- TelegramWhitelist -->
+  <g transform="translate(40,360)">
+    <rect class="cls" width="240" height="170"/>
+    <line x1="0" y1="28" x2="240" y2="28" stroke="#111"/>
+    <text class="hd" x="120" y="20">TelegramWhitelist</text>
+    <text class="at" x="10" y="48">+ telegram_chat_id</text>
+    <text class="at" x="10" y="66">+ user_name : string</text>
+    <text class="at" x="10" y="84">+ role : enum</text>
+    <text class="at" x="10" y="102">+ is_active : boolean</text>
+    <line x1="0" y1="116" x2="240" y2="116" stroke="#111"/>
+    <text class="at" x="10" y="136">+ findActive()</text>
+  </g>
+
+  <!-- User -->
+  <g transform="translate(830,360)">
+    <rect class="cls" width="250" height="170"/>
+    <line x1="0" y1="28" x2="250" y2="28" stroke="#111"/>
+    <text class="hd" x="125" y="20">User</text>
+    <text class="at" x="10" y="48">+ name : string</text>
+    <text class="at" x="10" y="66">+ email : string</text>
+    <text class="at" x="10" y="84">+ role : admin|petugas</text>
+    <text class="at" x="10" y="102">+ is_active : boolean</text>
+    <line x1="0" y1="116" x2="250" y2="116" stroke="#111"/>
+    <text class="at" x="10" y="136">+ canAccessDashboard()</text>
+  </g>
+
+  <!-- associations -->
+  <line class="rel" x1="280" y1="160" x2="430" y2="160"/>
+  <text x="355" y="150" text-anchor="middle" font-family="Times New Roman, serif" font-size="11">1  memiliki  *</text>
+  <line class="rel" x1="680" y1="160" x2="830" y2="160"/>
+  <text x="755" y="150" text-anchor="middle" font-family="Times New Roman, serif" font-size="11">1  berisi  *</text>
+  <line class="rel" x1="555" y1="300" x2="555" y2="360"/>
+  <text x="620" y="336" font-family="Times New Roman, serif" font-size="11">1..*</text>
+
+  <text x="550" y="620" text-anchor="middle" font-family="Times New Roman, serif" font-size="11" fill="#555">Relasi: Case 1* PhysicalUnit 1* UnitItem; PhysicalUnit 1* Mutation. User untuk login web; TelegramWhitelist untuk otorisasi bot.</text>
+</svg>

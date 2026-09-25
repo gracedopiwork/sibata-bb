@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 640" width="1100" height="640">
+  <rect width="1100" height="640" fill="#ffffff"/>
+  <text x="550" y="28" text-anchor="middle" font-family="Times New Roman, serif" font-size="16" font-weight="bold" fill="#111">Gambar 3.1b  Diagram use case UML SITABA-BB</text>
+
+  <!-- system boundary -->
+  <rect x="230" y="56" width="640" height="540" fill="#fff" stroke="#111" stroke-width="1.6"/>
+  <text x="550" y="80" text-anchor="middle" font-family="Times New Roman, serif" font-size="13" font-weight="bold">SITABA-BB</text>
+
+  <!-- actors -->
+  <g id="actor-admin" transform="translate(70,160)">
+    <circle cx="40" cy="18" r="12" fill="none" stroke="#111" stroke-width="1.4"/>
+    <line x1="40" y1="30" x2="40" y2="62" stroke="#111" stroke-width="1.4"/>
+    <line x1="22" y1="44" x2="58" y2="44" stroke="#111" stroke-width="1.4"/>
+    <line x1="40" y1="62" x2="24" y2="88" stroke="#111" stroke-width="1.4"/>
+    <line x1="40" y1="62" x2="56" y2="88" stroke="#111" stroke-width="1.4"/>
+    <text x="40" y="108" text-anchor="middle" font-family="Times New Roman, serif" font-size="12">Admin PB3R</text>
+    <text x="40" y="124" text-anchor="middle" font-family="Times New Roman, serif" font-size="11">(Portal web)</text>
+  </g>
+  <g transform="translate(70,380)">
+    <circle cx="40" cy="18" r="12" fill="none" stroke="#111" stroke-width="1.4"/>
+    <line x1="40" y1="30" x2="40" y2="62" stroke="#111" stroke-width="1.4"/>
+    <line x1="22" y1="44" x2="58" y2="44" stroke="#111" stroke-width="1.4"/>
+    <line x1="40" y1="62" x2="24" y2="88" stroke="#111" stroke-width="1.4"/>
+    <line x1="40" y1="62" x2="56" y2="88" stroke="#111" stroke-width="1.4"/>
+    <text x="40" y="108" text-anchor="middle" font-family="Times New Roman, serif" font-size="12">Petugas / JPU</text>
+    <text x="40" y="124" text-anchor="middle" font-family="Times New Roman, serif" font-size="11">(Bot Telegram)</text>
+  </g>
+  <g transform="translate(960,300)">
+    <circle cx="40" cy="18" r="12" fill="none" stroke="#111" stroke-width="1.4"/>
+    <line x1="40" y1="30" x2="40" y2="62" stroke="#111" stroke-width="1.4"/>
+    <line x1="22" y1="44" x2="58" y2="44" stroke="#111" stroke-width="1.4"/>
+    <line x1="40" y1="62" x2="24" y2="88" stroke="#111" stroke-width="1.4"/>
+    <line x1="40" y1="62" x2="56" y2="88" stroke="#111" stroke-width="1.4"/>
+    <text x="40" y="108" text-anchor="middle" font-family="Times New Roman, serif" font-size="12">Pemindai QR</text>
+    <text x="40" y="124" text-anchor="middle" font-family="Times New Roman, serif" font-size="11">(Publik)</text>
+  </g>
+
+  <!-- use cases -->
+  <g font-family="Times New Roman, serif" font-size="12" text-anchor="middle">
+    <ellipse cx="400" cy="130" rx="95" ry="24" fill="#fff" stroke="#111"/>
+    <text x="400" y="134">Login dashboard</text>
+    <ellipse cx="400" cy="190" rx="110" ry="24" fill="#fff" stroke="#111"/>
+    <text x="400" y="194">Registrasi perkara &amp; BB</text>
+    <ellipse cx="400" cy="250" rx="95" ry="24" fill="#fff" stroke="#111"/>
+    <text x="400" y="254">Cetak / cetak ulang QR</text>
+    <ellipse cx="400" cy="310" rx="95" ry="24" fill="#fff" stroke="#111"/>
+    <text x="400" y="314">Kelola inventaris</text>
+    <ellipse cx="400" cy="370" rx="95" ry="24" fill="#fff" stroke="#111"/>
+    <text x="400" y="374">Ekspor register</text>
+    <ellipse cx="400" cy="430" rx="95" ry="24" fill="#fff" stroke="#111"/>
+    <text x="400" y="434">Kelola whitelist bot</text>
+
+    <ellipse cx="700" cy="190" rx="100" ry="24" fill="#fff" stroke="#111"/>
+    <text x="700" y="194">Wizard /tambah</text>
+    <ellipse cx="700" cy="250" rx="100" ry="24" fill="#fff" stroke="#111"/>
+    <text x="700" y="254">Cari BB / rekap</text>
+    <ellipse cx="700" cy="310" rx="100" ry="24" fill="#fff" stroke="#111"/>
+    <text x="700" y="314">Pinjam sidang</text>
+    <ellipse cx="700" cy="370" rx="100" ry="24" fill="#fff" stroke="#111"/>
+    <text x="700" y="374">Kembali gudang</text>
+    <ellipse cx="700" cy="430" rx="100" ry="24" fill="#fff" stroke="#111"/>
+    <text x="700" y="434">Eksekusi putusan</text>
+    <ellipse cx="700" cy="500" rx="110" ry="24" fill="#fff" stroke="#111"/>
+    <text x="700" y="504">Lihat status via QR</text>
+  </g>
+
+  <!-- associations -->
+  <g stroke="#111" stroke-width="1.1" fill="none">
+    <line x1="150" y1="220" x2="304" y2="138"/>
+    <line x1="150" y1="230" x2="290" y2="190"/>
+    <line x1="150" y1="240" x2="305" y2="250"/>
+    <line x1="150" y1="250" x2="305" y2="310"/>
+    <line x1="150" y1="260" x2="305" y2="370"/>
+    <line x1="150" y1="270" x2="305" y2="430"/>
+
+    <line x1="150" y1="430" x2="600" y2="190"/>
+    <line x1="150" y1="440" x2="600" y2="250"/>
+    <line x1="150" y1="450" x2="600" y2="310"/>
+    <line x1="150" y1="460" x2="600" y2="370"/>
+    <line x1="150" y1="470" x2="600" y2="430"/>
+
+    <line x1="960" y1="360" x2="810" y2="500"/>
+  </g>
+  <text x="550" y="620" text-anchor="middle" font-family="Times New Roman, serif" font-size="11" fill="#555">Aktor di kiri-kanan, elips di dalam batas sistem. Include/extend tidak digambar agar tetap terbaca pada ukuran laporan.</text>
+</svg>

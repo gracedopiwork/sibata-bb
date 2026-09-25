@@ -1,0 +1,145 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>Laporan Sistem SITABA-BB</title>
+<!--[if gte mso 9]>
+<xml>
+<w:WordDocument>
+<w:View>Print</w:View>
+</w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+@page { size: 21cm 29.7cm; margin: 2.5cm 2.5cm 2.5cm 2.5cm; }
+body { font-family: "Times New Roman", Times, serif; font-size: 12pt; color: #000; line-height: 1.5; }
+h1, h2, h3 { font-family: "Times New Roman", Times, serif; }
+.center { text-align: center; }
+.justify { text-align: justify; }
+.kop { text-align: center; border-bottom: 3pt solid #000; padding-bottom: 8pt; margin-bottom: 18pt; }
+.kop-sub { font-size: 11pt; }
+.judul { letter-spacing: 2pt; font-size: 14pt; margin-top: 18pt; }
+.bab { font-size: 12pt; margin-top: 18pt; margin-bottom: 8pt; text-align: center; }
+.sub { font-size: 12pt; margin-top: 12pt; margin-bottom: 6pt; }
+table { border-collapse: collapse; width: 100%; margin: 8pt 0 14pt; font-size: 11pt; }
+th, td { border: 1pt solid #000; padding: 4pt 6pt; vertical-align: top; }
+th { text-align: center; }
+.ttd { width: 48%; margin-left: auto; text-align: center; margin-top: 28pt; }
+</style>
+</head>
+<body>
+
+<div class="kop">
+<p style="margin:0; font-size:12pt; letter-spacing:1pt;"><b>KEJAKSAAN REPUBLIK INDONESIA</b></p>
+<p style="margin:4pt 0 0; font-size:16pt;"><b>KEJAKSAAN NEGERI WAJO</b></p>
+<p class="kop-sub" style="margin:4pt 0 0;">Seksi Pengelolaan Barang Bukti dan Barang Rampasan (PB3R)</p>
+<p class="kop-sub" style="margin:2pt 0 0;">Jl. Lap. PGA, Sengkang, Kabupaten Wajo, Sulawesi Selatan</p>
+</div>
+
+<p class="center judul"><b>LAPORAN</b></p>
+<p class="center" style="font-size:14pt; margin-top:6pt;"><b>SISTEM INFORMASI TATA KELOLA BARANG BUKTI<br>(SITABA-BB)</b></p>
+<p class="center" style="margin-top:8pt;">Nomor: LAP/PB3R/2026/0925</p>
+<p class="center">Sengkang, 25 September 2026</p>
+
+<p class="bab"><b>BAB I&nbsp;&nbsp;PENDAHULUAN</b></p>
+
+<p class="sub"><b>1.1.&nbsp;&nbsp;Latar Belakang</b></p>
+<p class="justify">Seksi Pengelolaan Barang Bukti dan Barang Rampasan (PB3R) Kejaksaan Negeri Wajo mengelola barang bukti sejak penerimaan Tahap II hingga eksekusi putusan inkracht. Pencatatan manual pada buku register dan ketergantungan pada pemindaian di meja gudang menimbulkan risiko selisih stok, label hilang, serta jejak peminjaman sidang yang tidak utuh. SITABA-BB dibangun untuk mengganti pola tersebut dengan register digital, stiker QR pada unit fisik, dan pencatatan lapangan melalui Telegram.</p>
+
+<p class="sub"><b>1.2.&nbsp;&nbsp;Maksud dan Tujuan</b></p>
+<p class="justify">Laporan ini disusun untuk:</p>
+<ol>
+<li>menjelaskan fungsi dan arsitektur SITABA-BB kepada pimpinan dan petugas PB3R;</li>
+<li>menyajikan kondisi register gudang pada lingkungan uji; dan</li>
+<li>mencatat status operasional sistem, termasuk cetak ulang label dan kesiapan bot Telegram.</li>
+</ol>
+
+<p class="sub"><b>1.3.&nbsp;&nbsp;Ruang Lingkup</b></p>
+<p class="justify">Ruang lingkup meliputi registrasi perkara, inventaris unit fisik (BB mandiri dan paket/wadah), mutasi pinjam sidang dan pengembalian, eksekusi putusan per item, pencetakan label QR, ekspor register, serta antarmuka bot Telegram.</p>
+
+<p class="bab"><b>BAB II&nbsp;&nbsp;GAMBARAN UMUM SISTEM</b></p>
+
+<p class="sub"><b>2.1.&nbsp;&nbsp;Pengertian</b></p>
+<p class="justify">SITABA-BB (Sistem Informasi Tata Kelola Barang Bukti) adalah aplikasi internal Kejaksaan Negeri Wajo yang menyatukan portal web administrasi dan bot Telegram operasional pada satu basis data relasional.</p>
+
+<p class="sub"><b>2.2.&nbsp;&nbsp;Prinsip Wadah Fisik</b></p>
+<p class="justify">Stiker QR menempel pada unit fisik di gudang, bukan pada setiap rincian putusan. Barang mandiri (sepeda motor, laptop, senjata) memakai kode <b>BB-YYYY-XXX</b>. Paket tersegel yang berisi beberapa barang memakai satu kode <b>PKT-YYYY-XXX</b> pada luar wadah, sementara isi paket dicatat terpisah karena putusan hukumnya dapat berbeda (misalnya narkotika dimusnahkan, telepon genggam dikembalikan).</p>
+
+<p class="sub"><b>2.3.&nbsp;&nbsp;Pengguna dan Hak Akses</b></p>
+<table>
+<tr><th width="30%">Pengguna</th><th>Hak akses</th></tr>
+<tr><td>Administrator PB3R</td><td>Masuk dashboard web: register perkara, inventaris, cetak label, laporan Excel, whitelist Telegram, dan pengguna.</td></tr>
+<tr><td>Petugas / JPU (Telegram)</td><td>Hanya melalui bot setelah Chat ID masuk daftar putih. Tidak dapat masuk dashboard.</td></tr>
+<tr><td>Pemindai QR publik</td><td>Melihat kartu status unit (kode, terdakwa, lokasi, isi) tanpa catatan internal.</td></tr>
+</table>
+
+<p class="sub"><b>2.4.&nbsp;&nbsp;Teknologi</b></p>
+<p class="justify">Aplikasi berjalan pada Laravel 11 (PHP 8.2), basis data SQLite pada lingkungan uji (siap dialihkan ke MySQL), antarmuka Blade dan Tailwind, pembangkit QR, ekspor Excel, serta webhook Telegram. Foto unit dan bukti eksekusi disimpan pada storage publik lokal.</p>
+
+<p class="bab"><b>BAB III&nbsp;&nbsp;FITUR DAN ALUR KERJA</b></p>
+
+<p class="sub"><b>3.1.&nbsp;&nbsp;Portal Web</b></p>
+<table>
+<tr><th width="30%">Modul</th><th>Kegiatan</th></tr>
+<tr><td>Dashboard</td><td>Ringkasan stok, mutasi terbaru, dan pinjaman sidang yang melewati tanggal.</td></tr>
+<tr><td>Register Perkara</td><td>Pencatatan nomor perkara, terdakwa, JPU, unit mandiri, dan paket beserta isi.</td></tr>
+<tr><td>Inventaris Fisik</td><td>Pencarian, peminjaman sidang, pengembalian gudang, eksekusi putusan, cetak ulang label.</td></tr>
+<tr><td>Antrean Cetak Label</td><td>Stiker 70 mm × 50 mm berisi kop Kejari Wajo, QR, kode unit, perkara, terdakwa, lokasi, dan ringkasan isi.</td></tr>
+<tr><td>Laporan / Ekspor</td><td>Filter register dan unduh Excel sesuai rincian barang bukti.</td></tr>
+</table>
+
+<p class="sub"><b>3.2.&nbsp;&nbsp;Bot Telegram</b></p>
+<p class="justify">Perintah operasional: <b>/start</b>, <b>/tambah</b> (wizard perkara dan BB), <b>/cari</b>, <b>/pinjam</b>, <b>/kembali</b>, <b>/eksekusi</b>, dan <b>/rekap</b>. Foto dapat dikirim dari kamera Telegram dan disimpan ke gudang digital. Pada tanggal laporan ini, token bot belum diisi sehingga webhook belum terhubung ke Telegram.</p>
+
+<p class="sub"><b>3.3.&nbsp;&nbsp;Alur Status</b></p>
+<p class="justify">Unit fisik berstatus tersimpan gudang, dipinjam sidang, atau selesai. Setiap item di dalam unit berstatus menunggu putusan, dimusnahkan, dikembalikan, dirampas negara/lelang, atau PSP. Mutasi tercatat sebagai check-in, pinjam sidang, kembali gudang, atau eksekusi.</p>
+
+<p class="bab"><b>BAB IV&nbsp;&nbsp;KONDISI REGISTER SAAT PELAPORAN</b></p>
+<p class="justify">Angka berikut merujuk pada data uji lokal per 25 September 2026.</p>
+
+<p class="sub"><b>4.1.&nbsp;&nbsp;Ringkasan Angka</b></p>
+<table>
+<tr><th>Uraian</th><th width="18%">Jumlah</th></tr>
+<tr><td>Perkara terdaftar</td><td class="center">3</td></tr>
+<tr><td>Unit fisik berstiker QR</td><td class="center">5</td></tr>
+<tr><td>Rincian barang bukti</td><td class="center">8</td></tr>
+<tr><td>Mutasi gudang</td><td class="center">7</td></tr>
+<tr><td>Unit tersimpan gudang</td><td class="center">5</td></tr>
+<tr><td>Unit dipinjam sidang</td><td class="center">0</td></tr>
+<tr><td>Label sudah pernah dicetak</td><td class="center">5</td></tr>
+<tr><td>Akun web / whitelist Telegram</td><td class="center">2 / 1</td></tr>
+</table>
+
+<p class="sub"><b>4.2.&nbsp;&nbsp;Contoh Perkara Uji</b></p>
+<table>
+<tr><th width="8%">No</th><th>Nomor Perkara</th><th>Terdakwa</th><th>JPU</th></tr>
+<tr><td class="center">1</td><td>REG-012/PID.SUS/2026</td><td>Hasanuddin</td><td>JPU Andi Fajar, S.H.</td></tr>
+<tr><td class="center">2</td><td>REG-021/PID.SUS-TPK/2026</td><td>Hj. Sitti Aminah</td><td>JPU Muhammad Yusuf, S.H., M.H.</td></tr>
+</table>
+
+<p class="sub"><b>4.3.&nbsp;&nbsp;Contoh Unit Fisik</b></p>
+<table>
+<tr><th width="8%">No</th><th>Kode</th><th>Jenis</th><th>Isi ringkas</th><th>Lokasi</th></tr>
+<tr><td class="center">1</td><td>BB-2026-001</td><td>Mandiri</td><td>Sepeda motor Honda Beat</td><td>Parkiran BB No. 04</td></tr>
+<tr><td class="center">2</td><td>PKT-2026-001</td><td>Paket</td><td>Sabu, timbangan digital, HP Vivo Y21</td><td>Brankas PB3R Laci 02</td></tr>
+<tr><td class="center">3</td><td>BB-2026-002</td><td>Mandiri</td><td>Laptop ASUS VivoBook</td><td>Lemari Besi A-02</td></tr>
+</table>
+
+<p class="bab"><b>BAB V&nbsp;&nbsp;PENUTUP</b></p>
+
+<p class="sub"><b>5.1.&nbsp;&nbsp;Kesimpulan</b></p>
+<p class="justify">SITABA-BB telah berfungsi sebagai register digital PB3R dengan pemisahan unit fisik dan rincian putusan, jejak mutasi gudang, pencetakan serta pencetakan ulang label QR, dan rancangan bot lapangan. Pada tanggal pelaporan, seluruh unit dalam data uji tersimpan di gudang dan seluruh rincian masih menunggu putusan.</p>
+
+<p class="sub"><b>5.2.&nbsp;&nbsp;Saran</b></p>
+<p class="justify">Disarankan mengisi token bot Telegram, memasang webhook pada alamat publik, mendaftarkan Chat ID petugas pada menu Akses Telegram, serta memindahkan basis data uji ke MySQL apabila sistem dipakai operasional harian.</p>
+
+<div class="ttd">
+<p>Sengkang, 25 September 2026</p>
+<p>Kepala Seksi PB3R<br>Kejaksaan Negeri Wajo</p>
+<p style="margin-top:48pt;"><b>................................</b></p>
+<p>NIP. ................................</p>
+</div>
+
+</body>
+</html>

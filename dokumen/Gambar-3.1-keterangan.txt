@@ -1,0 +1,16 @@
+Gambar 3.1  Diagram Alur Proses Bisnis dan Unified Modeling Language (UML) SITABA-BB
+Kejaksaan Negeri Wajo — Seksi PB3R
+
+Nama sistem yang benar: SITABA-BB (Sistem Informasi Tata Kelola Barang Bukti).
+
+Berkas:
+  dokumen/Gambar-3.1-Diagram-SITABA-BB.html   (buka di browser, lalu File > Print / Save as PDF)
+  dokumen/gambar/gambar-3-1a-alur-proses-bisnis.svg
+  dokumen/gambar/gambar-3-1b-uml-use-case.svg
+  dokumen/gambar/gambar-3-1c-uml-class.svg
+  dokumen/gambar/gambar-3-1d-uml-activity.svg
+
+Cara masukkan ke Word:
+  1. Buka gambar SVG di browser atau sisipkan langsung (Insert > Pictures).
+  2. Atau buka file HTML, cetak ke PDF, lalu sisipkan halaman PDF ke laporan.
+  3. Keterangan gambar: "Gambar 3.1  Diagram alur proses bisnis dan UML SITABA-BB"
