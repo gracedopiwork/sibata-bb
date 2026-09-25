@@ -5,6 +5,7 @@
 @section('subheading', 'Stiker 70×50 mm — KEJAKSAAN NEGERI WAJO · SEKSI PB3R')
 
 @section('content')
+@include('partials.inventory-tabs')
 <form method="GET" action="{{ route('print-labels.sheet') }}" class="space-y-4">
     <div class="flex flex-wrap gap-2">
         <button class="btn-gold" type="submit">Cetak / cetak ulang yang dipilih</button>

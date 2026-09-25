@@ -2,9 +2,10 @@
 
 @section('title', 'Daftar Segel')
 @section('heading', 'Daftar Segel / Paket')
-@section('subheading', 'Wadah tersegel. Isi BB tetap bisa dicari satu per satu di Daftar BB')
+@section('subheading', 'Wadah tersegel. Isi BB tetap bisa dicari satu per satu di tab Barang bukti')
 
 @section('content')
+@include('partials.inventory-tabs')
 <form class="filter-bar" method="GET">
     <div class="min-w-64 flex-1">
         <label class="label" for="q">Cari</label>
@@ -20,7 +21,6 @@
         </select>
     </div>
     <button class="btn-outline">Cari</button>
-    <a class="btn-gold" href="{{ route('items.index') }}">Daftar BB</a>
 </form>
 
 <div class="space-y-4">

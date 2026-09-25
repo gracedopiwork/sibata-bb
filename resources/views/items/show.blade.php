@@ -6,7 +6,7 @@
 
 @section('content')
 <div class="mb-4 flex flex-wrap gap-2">
-    <a class="btn-outline" href="{{ route('items.index') }}">Daftar BB</a>
+    <a class="btn-outline" href="{{ route('items.index') }}">Kembali ke inventaris</a>
     @if($item->physicalUnit)
         <a class="btn-outline" href="{{ route('units.show', $item->physicalUnit) }}">Buka {{ $item->physicalUnit->unit_type->value === 'PACK' ? 'segel' : 'unit' }}</a>
         @if($item->physicalUnit->legalCase)

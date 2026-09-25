@@ -72,7 +72,7 @@
                 <li class="text-sm text-navy-500">Tidak ada pinjaman terlambat.</li>
             @endforelse
         </ul>
-        <a class="mt-4 inline-block text-sm font-semibold text-navy-700" href="{{ route('print-labels.index') }}">Buka antrean cetak label →</a>
+        <a class="mt-4 inline-block text-sm font-semibold text-navy-700" href="{{ route('print-labels.index') }}">Buka cetak label →</a>
     </div>
 </div>
 @endsection

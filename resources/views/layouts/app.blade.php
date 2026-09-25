@@ -27,12 +27,9 @@
                 <p class="px-3 text-[11px] font-bold uppercase tracking-wider text-navy-100/40">Operasional</p>
                 <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}">Dashboard</a>
                 <a href="{{ route('cases.index') }}" class="nav-link {{ request()->routeIs('cases.*') ? 'nav-link-active' : '' }}">Register Perkara</a>
-                <a href="{{ route('items.index') }}" class="nav-link {{ request()->routeIs('items.*') ? 'nav-link-active' : '' }}">Daftar BB</a>
-                <a href="{{ route('seals.index') }}" class="nav-link {{ request()->routeIs('seals.*') ? 'nav-link-active' : '' }}">Daftar Segel</a>
-                <a href="{{ route('units.index') }}" class="nav-link {{ request()->routeIs('units.*') ? 'nav-link-active' : '' }}">Inventaris Fisik</a>
+                <a href="{{ route('items.index') }}" class="nav-link {{ request()->routeIs('items.*', 'seals.*', 'units.*', 'print-labels.*') ? 'nav-link-active' : '' }}">Inventaris</a>
                 <a href="{{ route('loans.index') }}" class="nav-link {{ request()->routeIs('loans.*') ? 'nav-link-active' : '' }}">Peminjaman BB</a>
-                <a href="{{ route('print-labels.index') }}" class="nav-link {{ request()->routeIs('print-labels.*') ? 'nav-link-active' : '' }}">Antrean Cetak Label</a>
-                <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'nav-link-active' : '' }}">Laporan / Ekspor</a>
+                <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'nav-link-active' : '' }}">Laporan</a>
 
                 <div class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-2">
                     <p class="px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-navy-100/40">Data Master</p>

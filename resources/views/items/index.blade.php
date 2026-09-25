@@ -5,6 +5,7 @@
 @section('subheading', 'Setiap BB berdiri sendiri dan bisa dicari, termasuk yang ada di dalam segel')
 
 @section('content')
+@include('partials.inventory-tabs')
 <form class="filter-bar" method="GET">
     <div class="min-w-64 flex-1">
         <label class="label" for="q">Cari</label>
@@ -29,7 +30,6 @@
         </select>
     </div>
     <button class="btn-outline">Cari</button>
-    <a class="btn-gold" href="{{ route('seals.index') }}">Daftar segel</a>
 </form>
 
 <div class="space-y-4">

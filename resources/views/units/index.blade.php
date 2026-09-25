@@ -5,7 +5,8 @@
 @section('subheading', 'Setiap baris adalah wadah/unit yang menempel stiker QR')
 
 @section('content')
-<form class="mb-4 flex flex-wrap gap-2" method="GET">
+@include('partials.inventory-tabs')
+<form class="filter-bar" method="GET">
     <input class="field w-64" name="q" value="{{ request('q') }}" placeholder="Kode, terdakwa, perkara, isi">
     <select class="field w-48" name="status">
         <option value="">Semua status gudang</option>
@@ -20,7 +21,6 @@
         @endforeach
     </select>
     <button class="btn-outline">Filter</button>
-    <a class="btn-gold" href="{{ route('print-labels.index') }}">Antrean cetak</a>
 </form>
 
 <div class="card overflow-x-auto p-0">
