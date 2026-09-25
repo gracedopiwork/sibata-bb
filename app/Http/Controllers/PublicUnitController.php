@@ -10,7 +10,7 @@ class PublicUnitController extends Controller
     public function show(string $unit_code): View
     {
         $unit = PhysicalUnit::query()
-            ->with(['legalCase', 'items'])
+            ->with(['legalCase', 'items', 'photo'])
             ->where('unit_code', strtoupper($unit_code))
             ->firstOrFail();
 

@@ -27,10 +27,20 @@
         <div class="mt-4 divide-y divide-navy-100">
             @forelse ($case->physicalUnits as $unit)
                 <div class="flex flex-wrap items-start justify-between gap-3 py-3">
-                    <div>
-                        <a class="font-semibold text-navy-900" href="{{ route('units.show', $unit) }}">{{ $unit->unit_code }}</a>
-                        <p class="text-xs text-navy-500">{{ $unit->unit_type->label() }} · {{ $unit->storage_location }}</p>
-                        <p class="mt-1 text-sm">{{ $unit->itemsSummary(120) }}</p>
+                    <div class="flex min-w-0 flex-1 gap-3">
+                        @if($unit->hasPhoto())
+                            <a href="{{ route('units.show', $unit) }}" class="shrink-0">
+                                <img class="h-16 w-16 rounded-lg object-cover" src="{{ $unit->photoUrl() }}" alt="Foto {{ $unit->unit_code }}">
+                            </a>
+                        @endif
+                        <div class="min-w-0">
+                            <a class="font-semibold text-navy-900" href="{{ route('units.show', $unit) }}">{{ $unit->unit_code }}</a>
+                            <p class="text-xs text-navy-500">{{ $unit->unit_type->label() }} · {{ $unit->storage_location }}</p>
+                            <p class="mt-1 text-sm">{{ $unit->itemsSummary(120) }}</p>
+                            @unless($unit->hasPhoto())
+                                <p class="mt-1 text-xs text-navy-500">Belum ada foto — unggah di halaman unit.</p>
+                            @endunless
+                        </div>
                     </div>
                     <div class="flex flex-col items-end gap-2">
                         <span class="{{ $unit->current_status->badgeClass() }}">{{ $unit->current_status->label() }}</span>

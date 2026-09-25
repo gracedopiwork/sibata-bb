@@ -32,6 +32,7 @@ class TelegramBotService
         private readonly TelegramService $telegram,
         private readonly QrCodeService $qrCode,
         private readonly WarehouseService $warehouse,
+        private readonly PackContentsParser $packContents,
     ) {}
 
     /**
@@ -528,18 +529,42 @@ class TelegramBotService
             return;
         }
 
-        if ($conversation->step === 'awaiting_child_name') {
-            if ($text === '') {
-                $this->reply($chatId, 'Kirim rincian isi paket.');
+        if ($conversation->step === 'awaiting_pack_contents' || $conversation->step === 'awaiting_child_name') {
+            if ($this->isSkipCommand($text)) {
+                $this->finishPackContents($actor, $chatId, $payload);
 
                 return;
             }
 
-            [$name, $qty] = $this->parseNameAndQty($text);
-            $payload['child_name'] = $name;
-            $payload['child_qty'] = $qty;
-            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_category', null, $payload);
-            $this->reply($chatId, 'Pilih kategori isi paket:', $this->categoryKeyboard());
+            if ($text === '') {
+                $this->reply($chatId, $this->packContentsHelp());
+
+                return;
+            }
+
+            $items = $this->packContents->parse($text);
+            if ($items === []) {
+                $this->reply($chatId, $this->packContentsHelp());
+
+                return;
+            }
+
+            $unit = PhysicalUnit::query()->find((int) ($payload['unit_id'] ?? 0));
+            if ($unit === null) {
+                $this->clearConversation((int) $actor->telegram_chat_id);
+                $this->reply($chatId, 'Paket tidak ditemukan. Mulai ulang /tambah.');
+
+                return;
+            }
+
+            $count = $this->warehouse->addPackChildren($unit, $items);
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_loop', null, $payload);
+            $this->reply($chatId, "✅ {$count} isi paket ditambahkan. Lanjut tempel daftar lagi, atau selesai.", [
+                [
+                    ['text' => '+ Tempel Daftar Lagi', 'callback_data' => 'pack_more'],
+                    ['text' => 'Selesai Paket Ini', 'callback_data' => 'pack_done'],
+                ],
+            ]);
 
             return;
         }
@@ -624,11 +649,9 @@ class TelegramBotService
 
         if ($data === 'pack_more') {
             $this->telegram->answerCallbackQuery($callbackId);
-            $index = ((int) ($payload['child_index'] ?? 1)) + 1;
-            $payload['child_index'] = $index;
             unset($payload['child_name'], $payload['child_qty']);
-            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_name', null, $payload);
-            $this->reply($chatId, "Rincian barang ke-{$index} di dalam paket:");
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_contents', null, $payload);
+            $this->reply($chatId, $this->packContentsHelp());
 
             return;
         }
@@ -637,8 +660,8 @@ class TelegramBotService
             $unit = PhysicalUnit::query()->with(['legalCase', 'items'])->find((int) ($payload['unit_id'] ?? 0));
             $this->telegram->answerCallbackQuery($callbackId);
 
-            if ($unit === null || $unit->items->isEmpty()) {
-                $this->reply($chatId, 'Paket masih kosong. Tambahkan minimal satu isi.');
+            if ($unit === null) {
+                $this->reply($chatId, 'Paket tidak ditemukan. Mulai ulang /tambah.');
 
                 return;
             }
@@ -746,12 +769,38 @@ class TelegramBotService
         );
 
         $payload['unit_id'] = $unit->id;
-        $payload['child_index'] = 1;
-        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_name', null, $payload);
+        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_contents', null, $payload);
         $this->reply(
             $chatId,
-            "✅ Wadah <code>{$this->e($unit->unit_code)}</code> tercatat.\n\nRincian barang ke-1 di dalam paket:"
+            "✅ Wadah <code>{$this->e($unit->unit_code)}</code> tercatat.\n\n".$this->packContentsHelp()
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function finishPackContents(TelegramWhitelist $actor, int|string $chatId, array $payload): void
+    {
+        $unit = PhysicalUnit::query()->with(['legalCase', 'items'])->find((int) ($payload['unit_id'] ?? 0));
+
+        if ($unit !== null) {
+            $this->sendUnitSummary($chatId, $unit, $actor);
+        }
+
+        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_more', null, $payload);
+        $this->reply($chatId, 'Paket tersimpan. Rincian isi bisa ditambah nanti di portal. Tambah unit lain?', [
+            [
+                ['text' => '+ Tambah Lagi', 'callback_data' => 'add_more'],
+                ['text' => 'Selesai', 'callback_data' => 'add_done'],
+            ],
+        ]);
+    }
+
+    private function packContentsHelp(): string
+    {
+        return "Tempel <b>daftar isi</b> dari BA, satu baris per barang. Segel tidak perlu dibuka.\n\n"
+            ."Contoh:\n<code>2 sachet sabu 0,5 gram\n1 unit timbangan | ELEKTRONIK\nHP Vivo Y21 | ELEKTRONIK | 1 unit</code>\n\n"
+            .'Ketik <code>/skip</code> jika rincian dilengkapi nanti.';
     }
 
     /**
@@ -1316,13 +1365,18 @@ class TelegramBotService
         return $this->warehouse->findByCode($text !== '' ? $text : null);
     }
 
+    private function isSkipCommand(string $text): bool
+    {
+        return in_array(strtolower(trim($text)), ['/skip', 'skip', '-'], true);
+    }
+
     /**
      * @param  array<string, mixed>  $message
      * @return string|false|null false = invalid input, null = skipped, string = path
      */
     private function optionalPhotoPath(array $message, string $text, string $directory): string|false|null
     {
-        if (in_array(strtolower($text), ['/skip', 'skip', '-'], true)) {
+        if ($this->isSkipCommand($text)) {
             return null;
         }
 

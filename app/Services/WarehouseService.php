@@ -11,7 +11,10 @@ use App\Models\LegalCase;
 use App\Models\Mutation;
 use App\Models\PhysicalUnit;
 use App\Models\UnitItem;
+use App\Models\UnitPhoto;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class WarehouseService
 {
@@ -48,6 +51,7 @@ class WarehouseService
             ]);
 
             $this->mutate($unit, MutationType::CheckIn, $handledBy, 'Check-in BB mandiri.');
+            $this->persistPhotoRecord($unit, $photoPath);
 
             return $unit->load(['legalCase', 'items']);
         });
@@ -85,9 +89,44 @@ class WarehouseService
             }
 
             $this->mutate($unit, MutationType::CheckIn, $handledBy, 'Check-in paket/wadah BB.');
+            $this->persistPhotoRecord($unit, $photoPath);
 
             return $unit->load(['legalCase', 'items']);
         });
+    }
+
+    public function attachPhoto(PhysicalUnit $unit, UploadedFile $file): PhysicalUnit
+    {
+        $path = $file->store('units', 'public');
+
+        if (is_string($unit->photo_path) && $unit->photo_path !== '' && $unit->photo_path !== $path) {
+            Storage::disk('public')->delete($unit->photo_path);
+        }
+
+        $unit->update(['photo_path' => $path]);
+        $this->persistPhotoRecord($unit->fresh() ?? $unit, $path);
+
+        return $unit->refresh();
+    }
+
+    private function persistPhotoRecord(PhysicalUnit $unit, ?string $photoPath): void
+    {
+        if (! is_string($photoPath) || $photoPath === '' || ! Storage::disk('public')->exists($photoPath)) {
+            return;
+        }
+
+        $contents = Storage::disk('public')->get($photoPath);
+        if ($contents === null || $contents === '') {
+            return;
+        }
+
+        UnitPhoto::query()->updateOrCreate(
+            ['physical_unit_id' => $unit->id],
+            [
+                'mime' => Storage::disk('public')->mimeType($photoPath) ?: 'image/jpeg',
+                'data' => $contents,
+            ],
+        );
     }
 
     public function addPackChild(PhysicalUnit $unit, string $itemName, ItemCategory|string $category, string $quantity = '1'): UnitItem
@@ -102,6 +141,30 @@ class WarehouseService
             'quantity' => $quantity,
             'verdict_status' => VerdictStatus::MenungguPutusan,
         ]);
+    }
+
+    /**
+     * @param  array<int, array{item_name: string, category: mixed, quantity?: string}>  $children
+     */
+    public function addPackChildren(PhysicalUnit $unit, array $children): int
+    {
+        $count = 0;
+
+        foreach ($children as $child) {
+            if (! filled($child['item_name'] ?? null)) {
+                continue;
+            }
+
+            $this->addPackChild(
+                $unit,
+                (string) $child['item_name'],
+                $child['category'],
+                (string) ($child['quantity'] ?? '1'),
+            );
+            $count++;
+        }
+
+        return $count;
     }
 
     public function loan(PhysicalUnit $unit, string $borrowerName, ?string $courtDate, string $handledBy, ?string $notes = null): Mutation

@@ -9,6 +9,8 @@ use App\Models\PhysicalUnit;
 use App\Models\Prosecutor;
 use App\Models\StorageLocation;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SitabaSmokeTest extends TestCase
@@ -29,6 +31,7 @@ class SitabaSmokeTest extends TestCase
 
         $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('Dashboard PB3R');
         $this->actingAs($admin)->get('/cases')->assertOk()->assertSee('Register Perkara');
+        $this->actingAs($admin)->get('/cases/create')->assertOk()->assertSee('Tempel daftar isi');
         $this->actingAs($admin)->get('/units')->assertOk()->assertSee('Inventaris Fisik');
         $this->actingAs($admin)->get('/print-labels')->assertOk();
         $this->actingAs($admin)->get('/reports')->assertOk();
@@ -200,6 +203,66 @@ class SitabaSmokeTest extends TestCase
         $this->assertDatabaseHas('sip_evidence_items', ['item_name' => '1 sachet sabu 0,3 gram '.$caseNumber]);
     }
 
+    public function test_admin_can_register_sealed_pack_from_bulk_list(): void
+    {
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
+        $caseNumber = 'REG-BULK/PID.SUS/'.now()->format('His');
+
+        $this->actingAs($admin)->post('/cases', [
+            'case_number' => $caseNumber,
+            'defendant_name' => 'La Ode Bulk',
+            'case_type_id' => CaseType::query()->where('code', 'NARKOTIKA')->value('id'),
+            'prosecutor_ids' => [Prosecutor::query()->firstOrFail()->id],
+            'units' => [[
+                'type' => 'PACK',
+                'asset_type_id' => AssetType::query()->where('code', 'BERGERAK')->value('id'),
+                'storage_location_id' => StorageLocation::query()->where('code', 'BRANKAS_02')->value('id'),
+                'contents_bulk' => "2 sachet sabu 0,4 gram {$caseNumber}\n1 unit HP Android | ELEKTRONIK | 1 unit",
+            ]],
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('sip_evidence_items', ['item_name' => '2 sachet sabu 0,4 gram '.$caseNumber]);
+        $this->assertDatabaseHas('sip_evidence_items', ['item_name' => '1 unit HP Android']);
+    }
+
+    public function test_admin_can_save_sealed_pack_without_contents(): void
+    {
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
+        $caseNumber = 'REG-SEGEL/PID.SUS/'.now()->format('His');
+
+        $this->actingAs($admin)->post('/cases', [
+            'case_number' => $caseNumber,
+            'defendant_name' => 'La Ode Segel',
+            'case_type_id' => CaseType::query()->where('code', 'NARKOTIKA')->value('id'),
+            'prosecutor_ids' => [Prosecutor::query()->firstOrFail()->id],
+            'units' => [[
+                'type' => 'PACK',
+                'asset_type_id' => AssetType::query()->where('code', 'BERGERAK')->value('id'),
+                'storage_location_id' => StorageLocation::query()->where('code', 'BRANKAS_01')->value('id'),
+            ]],
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('cases', ['case_number' => $caseNumber]);
+        $this->assertDatabaseHas('physical_units', [
+            'storage_location' => 'Brankas PB3R Laci 01',
+            'unit_type' => 'PACK',
+        ]);
+    }
+
+    public function test_admin_can_store_unit_photo_in_database(): void
+    {
+        Storage::fake('public');
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
+        $unit = PhysicalUnit::query()->firstOrFail();
+
+        $this->actingAs($admin)->post(route('units.photo.update', $unit), [
+            'photo' => UploadedFile::fake()->image('segel.jpg', 200, 200),
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('unit_photos', ['physical_unit_id' => $unit->id]);
+        $this->get(route('units.photo', $unit))->assertOk();
+    }
+
     public function test_admin_can_loan_and_return_unit(): void
     {
         $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
@@ -246,7 +309,7 @@ class SitabaSmokeTest extends TestCase
         $unit->update(['is_printed' => true]);
 
         $this->actingAs($admin)
-            ->get('/units')
+            ->get(route('units.show', $unit))
             ->assertOk()
             ->assertSee('Cetak ulang');
 

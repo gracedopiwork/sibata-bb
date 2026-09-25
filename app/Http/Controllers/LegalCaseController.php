@@ -12,6 +12,7 @@ use App\Models\CaseType;
 use App\Models\EvidenceCategory;
 use App\Models\LegalCase;
 use App\Models\Prosecutor;
+use App\Services\PackContentsParser;
 use App\Services\WarehouseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,10 @@ use Illuminate\View\View;
 
 class LegalCaseController extends Controller
 {
-    public function __construct(private readonly WarehouseService $warehouse) {}
+    public function __construct(
+        private readonly WarehouseService $warehouse,
+        private readonly PackContentsParser $packContents,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -103,10 +107,14 @@ class LegalCaseController extends Controller
                     ->filter(fn ($child) => filled($child['item_name'] ?? null))
                     ->map(fn ($child) => [
                         'item_name' => $child['item_name'],
-                        'category' => (string) $child['category'],
+                        'category' => (string) ($child['category'] ?? 'NARKOTIKA'),
                         'quantity' => $child['quantity'] ?? '1',
                     ])
                     ->all();
+
+                if (filled($unitInput['contents_bulk'] ?? null)) {
+                    $children = array_merge($children, $this->packContents->parse((string) $unitInput['contents_bulk']));
+                }
 
                 $unit = $this->warehouse->createPackUnit(
                     $case,
@@ -130,7 +138,7 @@ class LegalCaseController extends Controller
 
     public function show(LegalCase $case): View
     {
-        $case->load(['caseType', 'prosecutors', 'physicalUnits.items', 'physicalUnits.mutations']);
+        $case->load(['caseType', 'prosecutors', 'physicalUnits.items', 'physicalUnits.mutations', 'physicalUnits.photo']);
 
         return view('cases.show', [
             'case' => $case,

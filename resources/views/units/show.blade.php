@@ -36,11 +36,21 @@
                 <p class="text-xs uppercase text-navy-500">Status</p>
                 <span class="{{ $unit->current_status->badgeClass() }}">{{ $unit->current_status->label() }}</span>
             </div>
-            @if($unit->hasPhoto())
-                <div class="md:col-span-2">
-                    <img class="max-h-64 rounded-xl object-cover" src="{{ asset('storage/'.$unit->photo_path) }}" alt="Foto unit">
-                </div>
-            @endif
+            <div class="md:col-span-2 space-y-3">
+                @if($unit->hasPhoto())
+                    <img class="max-h-64 rounded-xl object-cover" src="{{ $unit->photoUrl() }}" alt="Foto unit">
+                @else
+                    <p class="text-sm text-navy-500">Belum ada foto unit.</p>
+                @endif
+                <form method="POST" action="{{ route('units.photo.update', $unit) }}" enctype="multipart/form-data" class="flex flex-wrap items-end gap-2">
+                    @csrf
+                    <div class="min-w-56 flex-1">
+                        <label class="label">{{ $unit->hasPhoto() ? 'Ganti foto' : 'Unggah foto' }}</label>
+                        <input class="field" type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" required>
+                    </div>
+                    <button class="btn-outline">Simpan foto</button>
+                </form>
+            </div>
         </div>
 
         <div class="card">
@@ -69,16 +79,23 @@
             </div>
 
             @if($unit->unit_type->value === 'PACK')
-                <form class="mt-6 grid gap-3 md:grid-cols-4" method="POST" action="{{ route('units.children.store', $unit) }}">
+                <form class="mt-6 space-y-2" method="POST" action="{{ route('units.children.bulk', $unit) }}">
                     @csrf
-                    <input class="field md:col-span-2" name="item_name" placeholder="Nama isi paket" required>
+                    <label class="label">Tempel daftar isi (satu baris per barang)</label>
+                    <textarea class="field font-mono text-sm" name="contents_bulk" rows="5" placeholder="2 sachet sabu 0,5 gram&#10;1 unit timbangan digital | ELEKTRONIK&#10;HP Vivo Y21 | ELEKTRONIK | 1 unit" required></textarea>
+                    <p class="text-xs text-navy-500">Format: nama | kategori | jumlah. Segel tidak perlu dibuka.</p>
+                    <button class="btn-gold">Tambah semua isi</button>
+                </form>
+                <form class="mt-4 grid gap-3 md:grid-cols-4" method="POST" action="{{ route('units.children.store', $unit) }}">
+                    @csrf
+                    <input class="field md:col-span-2" name="item_name" placeholder="Atau tambah satu item" required>
                     <select class="field" name="category" required>
                         @foreach ($categories as $category)
                             <option value="{{ $category->code }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                     <input class="field" name="quantity" value="1" required>
-                    <button class="btn-outline md:col-span-4">Tambah isi paket</button>
+                    <button class="btn-outline md:col-span-4">Tambah satu isi</button>
                 </form>
             @endif
         </div>

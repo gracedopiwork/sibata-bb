@@ -23,6 +23,8 @@ Route::get('/', function () {
 
 Route::get('view/{unit_code}', [PublicUnitController::class, 'show'])
     ->name('units.public');
+Route::get('units/{unit}/photo', [PhysicalUnitController::class, 'photo'])
+    ->name('units.photo');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -42,6 +44,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('units/{unit}/loan', [PhysicalUnitController::class, 'loan'])->name('units.loan');
         Route::post('units/{unit}/return', [PhysicalUnitController::class, 'returnToWarehouse'])->name('units.return');
         Route::post('units/{unit}/children', [PhysicalUnitController::class, 'addChild'])->name('units.children.store');
+        Route::post('units/{unit}/children/bulk', [PhysicalUnitController::class, 'addChildrenBulk'])->name('units.children.bulk');
+        Route::post('units/{unit}/photo', [PhysicalUnitController::class, 'updatePhoto'])->name('units.photo.update');
         Route::post('units/{unit}/items/{item}/execute', [PhysicalUnitController::class, 'execute'])->name('units.items.execute');
 
         Route::get('print-labels', [PrintLabelController::class, 'index'])->name('print-labels.index');

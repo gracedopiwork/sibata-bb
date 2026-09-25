@@ -29,14 +29,15 @@ class StoreLegalCaseRequest extends FormRequest
             'units.*.type' => ['required', Rule::enum(UnitType::class)],
             'units.*.asset_type_id' => ['required', 'exists:asset_types,id'],
             'units.*.storage_location_id' => ['required', 'exists:storage_locations,id'],
-            'units.*.photo' => ['nullable', 'image', 'max:8192'],
+            'units.*.photo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:12288'],
             'units.*.item_name' => ['required_if:units.*.type,SINGLE', 'nullable', 'string', 'max:255'],
             'units.*.category' => ['required_if:units.*.type,SINGLE', 'nullable', 'exists:evidence_categories,code'],
             'units.*.quantity' => ['required_if:units.*.type,SINGLE', 'nullable', 'string', 'max:50'],
-            'units.*.children' => ['required_if:units.*.type,PACK', 'array'],
-            'units.*.children.*.item_name' => ['required_if:units.*.type,PACK', 'string', 'max:255'],
-            'units.*.children.*.category' => ['required_if:units.*.type,PACK', 'exists:evidence_categories,code'],
-            'units.*.children.*.quantity' => ['required_if:units.*.type,PACK', 'string', 'max:50'],
+            'units.*.contents_bulk' => ['nullable', 'string'],
+            'units.*.children' => ['nullable', 'array'],
+            'units.*.children.*.item_name' => ['nullable', 'string', 'max:255'],
+            'units.*.children.*.category' => ['nullable', 'exists:evidence_categories,code'],
+            'units.*.children.*.quantity' => ['nullable', 'string', 'max:50'],
         ];
     }
 

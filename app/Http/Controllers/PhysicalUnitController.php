@@ -9,15 +9,23 @@ use App\Models\EvidenceCategory;
 use App\Models\PhysicalUnit;
 use App\Models\StorageLocation;
 use App\Models\UnitItem;
+use App\Models\UnitPhoto;
+use App\Services\PackContentsParser;
 use App\Services\WarehouseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PhysicalUnitController extends Controller
 {
-    public function __construct(private readonly WarehouseService $warehouse) {}
+    public function __construct(
+        private readonly WarehouseService $warehouse,
+        private readonly PackContentsParser $packContents,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -119,6 +127,60 @@ class PhysicalUnitController extends Controller
         }
 
         return back()->with('status', 'Rincian isi paket ditambahkan.');
+    }
+
+    public function addChildrenBulk(Request $request, PhysicalUnit $unit): RedirectResponse
+    {
+        $data = $request->validate([
+            'contents_bulk' => ['required', 'string'],
+        ]);
+
+        $items = $this->packContents->parse($data['contents_bulk']);
+
+        if ($items === []) {
+            return back()->withErrors(['contents_bulk' => 'Tidak ada baris yang bisa dibaca.']);
+        }
+
+        try {
+            $count = $this->warehouse->addPackChildren($unit, $items);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['contents_bulk' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', $count.' isi paket ditambahkan dari daftar.');
+    }
+
+    public function photo(PhysicalUnit $unit): Response|StreamedResponse
+    {
+        $record = UnitPhoto::query()->where('physical_unit_id', $unit->id)->first();
+        $binary = $record?->data;
+        if (is_resource($binary)) {
+            $binary = stream_get_contents($binary);
+        }
+
+        if (is_string($binary) && $binary !== '') {
+            return response($binary, 200, [
+                'Content-Type' => $record->mime ?: 'image/jpeg',
+                'Cache-Control' => 'private, max-age=86400',
+            ]);
+        }
+
+        if (is_string($unit->photo_path) && $unit->photo_path !== '' && Storage::disk('public')->exists($unit->photo_path)) {
+            return Storage::disk('public')->response($unit->photo_path);
+        }
+
+        abort(404);
+    }
+
+    public function updatePhoto(Request $request, PhysicalUnit $unit): RedirectResponse
+    {
+        $data = $request->validate([
+            'photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:12288'],
+        ]);
+
+        $this->warehouse->attachPhoto($unit, $data['photo']);
+
+        return back()->with('status', 'Foto unit tersimpan.');
     }
 
     public function execute(Request $request, PhysicalUnit $unit, UnitItem $item): RedirectResponse

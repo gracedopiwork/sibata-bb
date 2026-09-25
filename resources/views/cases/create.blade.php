@@ -104,9 +104,18 @@
             </div>
 
             <div x-show="unit.type === 'PACK'" class="space-y-3 rounded-xl bg-navy-50 p-4">
+                <p class="text-sm font-semibold">Rincian isi paket</p>
+                <p class="text-xs text-navy-600">Segel tidak perlu dibuka. Tempel daftar dari BA/penyidik, satu baris per barang. Boleh dikosongkan dulu dan dilengkapi nanti.</p>
+                <div>
+                    <label class="label">Tempel daftar isi</label>
+                    <textarea class="field font-mono text-sm" rows="5" :name="'units['+index+'][contents_bulk]'" x-model="unit.contents_bulk"
+                              placeholder="2 sachet sabu 0,5 gram&#10;1 unit timbangan digital | ELEKTRONIK&#10;HP Vivo Y21 | ELEKTRONIK | 1 unit"></textarea>
+                    <p class="mt-1 text-xs text-navy-500">Format: nama | kategori | jumlah. Kategori dan jumlah opsional.</p>
+                    <button type="button" class="btn-gold mt-2" @click="applyBulk(index)">Terapkan ke tabel</button>
+                </div>
                 <div class="flex items-center justify-between">
-                    <p class="text-sm font-semibold">Rincian isi paket (putusan bisa berbeda per item)</p>
-                    <button type="button" class="btn-gold" @click="addChild(index)">+ Isi paket</button>
+                    <p class="text-xs font-semibold text-navy-600">Atau isi satu per satu</p>
+                    <button type="button" class="btn-outline" @click="addChild(index)">+ Baris</button>
                 </div>
                 <template x-for="(child, cIndex) in unit.children" :key="child.key">
                     <div class="grid gap-3 rounded-lg bg-white p-3 md:grid-cols-12">
@@ -147,6 +156,7 @@ function caseForm() {
     const defaultCategory = @json($categories->first()?->code ?? 'NARKOTIKA');
     const defaultAssetType = @json($assetTypes->first()?->id);
     const defaultStorageLocation = @json($storageLocations->first()?->id);
+    const categoryMap = @json($categories->mapWithKeys(fn ($category) => [strtolower($category->code) => $category->code]));
     const child = () => ({ key: nextKey(), item_name: '', category: defaultCategory, quantity: '1' });
     return {
         units: [{
@@ -158,19 +168,20 @@ function caseForm() {
             quantity: '1 unit',
             storage_location_id: defaultStorageLocation,
             children: [],
+            contents_bulk: '',
         }],
         addSingle() {
             this.units.push({
                 key: nextKey(), type: 'SINGLE', item_name: '', category: defaultCategory,
                 asset_type_id: defaultAssetType, quantity: '1 unit',
-                storage_location_id: defaultStorageLocation, children: [],
+                storage_location_id: defaultStorageLocation, children: [], contents_bulk: '',
             });
         },
         addPack() {
             this.units.push({
                 key: nextKey(), type: 'PACK', item_name: '', category: defaultCategory,
                 asset_type_id: defaultAssetType, quantity: '',
-                storage_location_id: defaultStorageLocation, children: [child()],
+                storage_location_id: defaultStorageLocation, children: [], contents_bulk: '',
             });
         },
         removeUnit(index) {
@@ -181,8 +192,30 @@ function caseForm() {
             this.units[index].children.push(child());
         },
         removeChild(index, cIndex) {
-            if (this.units[index].children.length === 1) return;
             this.units[index].children.splice(cIndex, 1);
+        },
+        applyBulk(index) {
+            const lines = (this.units[index].contents_bulk || '').split(/\r?\n/);
+            const parsed = [];
+            lines.forEach((raw) => {
+                const line = raw.trim();
+                if (!line) return;
+                const parts = line.split('|').map((part) => part.trim()).filter(Boolean);
+                const name = parts[0] || line;
+                let category = defaultCategory;
+                let quantity = '1';
+                if (parts[1]) {
+                    const mapped = categoryMap[parts[1].toLowerCase()];
+                    if (mapped) category = mapped;
+                    else quantity = parts[1];
+                }
+                if (parts[2]) quantity = parts[2];
+                parsed.push({ key: nextKey(), item_name: name, category, quantity });
+            });
+            if (parsed.length) {
+                this.units[index].children = parsed;
+                this.units[index].contents_bulk = '';
+            }
         },
     };
 }

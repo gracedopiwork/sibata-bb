@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 
 class PhysicalUnit extends Model
@@ -46,6 +47,17 @@ class PhysicalUnit extends Model
     public function storageLocation(): BelongsTo
     {
         return $this->belongsTo(StorageLocation::class);
+    }
+
+    public function photo(): HasOne
+    {
+        return $this->hasOne(UnitPhoto::class)->select([
+            'id',
+            'physical_unit_id',
+            'mime',
+            'created_at',
+            'updated_at',
+        ]);
     }
 
     public function items(): HasMany
@@ -94,9 +106,22 @@ class PhysicalUnit extends Model
 
     public function hasPhoto(): bool
     {
-        return is_string($this->photo_path)
+        if ($this->relationLoaded('photo') && $this->getRelation('photo') !== null) {
+            return true;
+        }
+
+        if (is_string($this->photo_path)
             && $this->photo_path !== ''
-            && Storage::disk('public')->exists($this->photo_path);
+            && Storage::disk('public')->exists($this->photo_path)) {
+            return true;
+        }
+
+        return $this->photo()->exists();
+    }
+
+    public function photoUrl(): string
+    {
+        return route('units.photo', $this);
     }
 
     public function publicViewUrl(): string

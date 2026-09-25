@@ -34,7 +34,7 @@
                 <p class="font-semibold">{{ $unit->storage_location }}</p>
             </div>
             @if($unit->hasPhoto())
-                <img class="w-full rounded-xl object-cover" src="{{ asset('storage/'.$unit->photo_path) }}" alt="Foto {{ $unit->unit_code }}">
+                <img class="w-full rounded-xl object-cover" src="{{ $unit->photoUrl() }}" alt="Foto {{ $unit->unit_code }}">
             @endif
         </div>
 
