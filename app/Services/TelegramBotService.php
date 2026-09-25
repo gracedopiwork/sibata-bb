@@ -8,6 +8,7 @@ use App\Enums\UnitStatus;
 use App\Enums\UnitType;
 use App\Enums\VerdictStatus;
 use App\Models\LegalCase;
+use App\Models\Prosecutor;
 use App\Models\PhysicalUnit;
 use App\Models\TelegramConversation;
 use App\Models\TelegramWhitelist;
@@ -139,7 +140,7 @@ class TelegramBotService
             return;
         }
 
-        if (in_array($text, ['/batal', '/cancel'], true)) {
+        if (in_array($text, ['/batal', '/batalkan', '/cancel'], true)) {
             $this->clearConversation($telegramId);
             $this->reply($chatId, 'Proses dibatalkan. Ketik /start untuk menu.');
 
@@ -280,7 +281,13 @@ class TelegramBotService
         }
 
         if ($conversation !== null && $conversation->action === 'tambah') {
-            $this->handleTambahCallback($actor, $chatId, $callbackId, $conversation, $data);
+            $this->handleTambahCallback($actor, $chatId, $callbackId, $conversation, $data, $this->callbackMessageId($message));
+
+            return;
+        }
+
+        if ($conversation !== null && $conversation->action === 'pinjam') {
+            $this->handlePinjamCallback($actor, $chatId, $callbackId, $conversation, $data, $this->callbackMessageId($message));
 
             return;
         }
@@ -405,35 +412,29 @@ class TelegramBotService
                 return;
             }
 
-            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_names', null, $payload);
-            $this->reply(
-                $chatId,
-                "Kirim <b>nama terdakwa</b> dan <b>nama JPU</b>, dipisah baris baru atau tanda <code>|</code>.\nContoh:\nAndi Rahman\nJPU Budi, S.H."
-            );
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_defendant', null, $payload);
+            $this->reply($chatId, 'Kirim <b>nama terdakwa</b>.');
 
             return;
         }
 
-        if ($conversation->step === 'awaiting_names') {
-            [$defendant, $prosecutor] = $this->parseTwoNames($text);
-
-            if ($defendant === '' || $prosecutor === '') {
-                $this->reply($chatId, 'Format tidak lengkap. Kirim nama terdakwa dan nama JPU (dua baris atau dipisah |).');
+        if ($conversation->step === 'awaiting_defendant') {
+            if ($text === '') {
+                $this->reply($chatId, 'Kirim nama terdakwa, atau /batal.');
 
                 return;
             }
 
-            $case = LegalCase::query()->create([
-                'case_number' => (string) $payload['case_number'],
-                'defendant_name' => $defendant,
-                'prosecutor_name' => $prosecutor,
-            ]);
+            $payload['defendant_name'] = $text;
+            $payload['prosecutor_ids'] = [];
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_prosecutors', null, $payload);
+            $this->promptProsecutorPicker($chatId, 'Pilih <b>JPU</b> (boleh lebih dari satu), lalu tekan <b>Selesai pilih JPU</b>.');
 
-            $payload['case_id'] = $case->id;
-            $payload['defendant_name'] = $defendant;
-            $payload['prosecutor_name'] = $prosecutor;
-            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_type', null, $payload);
-            $this->reply($chatId, 'Pilih jenis unit fisik yang akan dicatat:', $this->typeKeyboard());
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_prosecutors') {
+            $this->reply($chatId, 'Pilih JPU dari tombol di atas. Boleh lebih dari satu, lalu tekan <b>Selesai pilih JPU</b>.');
 
             return;
         }
@@ -543,8 +544,13 @@ class TelegramBotService
         string $callbackId,
         TelegramConversation $conversation,
         string $data,
+        ?int $messageId = null,
     ): void {
         $payload = $conversation->payload ?? [];
+
+        if ($this->handleProsecutorCallback($actor, $chatId, $callbackId, $conversation, $data, $messageId, 'tambah')) {
+            return;
+        }
 
         if ($data === 'type_SINGLE' && $conversation->step === 'awaiting_type') {
             $this->telegram->answerCallbackQuery($callbackId);
@@ -777,16 +783,8 @@ class TelegramBotService
             return;
         }
 
-        if ($conversation->step === 'awaiting_borrower') {
-            if ($text === '') {
-                $this->reply($chatId, 'Kirim nama JPU peminjam.');
-
-                return;
-            }
-
-            $payload['borrower_name'] = $text;
-            $this->putConversation((int) $actor->telegram_chat_id, 'pinjam', 'awaiting_court_date', null, $payload);
-            $this->reply($chatId, 'Kirim tanggal sidang (<code>YYYY-MM-DD</code>).');
+        if (in_array($conversation->step, ['awaiting_borrower', 'awaiting_loan_prosecutors'], true)) {
+            $this->reply($chatId, 'Pilih JPU peminjam dari tombol. Boleh lebih dari satu, lalu tekan <b>Selesai pilih JPU</b>.');
 
             return;
         }
@@ -1048,8 +1046,14 @@ class TelegramBotService
             return;
         }
 
-        $this->putConversation((int) $actor->telegram_chat_id, 'pinjam', 'awaiting_borrower', null, ['unit_id' => $unit->id]);
-        $this->reply($chatId, "📤 <b>Pinjam sidang</b>\n{$this->unitHeader($unit)}\n\nKirim <b>nama JPU peminjam</b>.");
+        $this->putConversation((int) $actor->telegram_chat_id, 'pinjam', 'awaiting_loan_prosecutors', null, [
+            'unit_id' => $unit->id,
+            'prosecutor_ids' => [],
+        ]);
+        $this->promptProsecutorPicker(
+            $chatId,
+            "📤 <b>Pinjam sidang</b>\n{$this->unitHeader($unit)}\n\nPilih <b>JPU peminjam</b> (boleh lebih dari satu), lalu tekan <b>Selesai pilih JPU</b>."
+        );
     }
 
     private function promptReturnDetails(TelegramWhitelist $actor, int|string $chatId, PhysicalUnit $unit): void
@@ -1286,6 +1290,187 @@ class TelegramBotService
         }
 
         return [trim($text), '1'];
+    }
+
+    /**
+     * @param  array<int, int>  $selectedIds
+     * @return array<int, array<int, array<string, string>>>
+     */
+    private function prosecutorKeyboard(array $selectedIds): array
+    {
+        $rows = [];
+
+        foreach (Prosecutor::active()->get() as $prosecutor) {
+            $mark = in_array((int) $prosecutor->id, $selectedIds, true) ? '✓ ' : '';
+            $label = $mark.$prosecutor->name;
+
+            if (mb_strlen($label) > 60) {
+                $label = mb_substr($label, 0, 59).'…';
+            }
+
+            $rows[] = [['text' => $label, 'callback_data' => 'jpu_'.$prosecutor->id]];
+        }
+
+        $rows[] = [['text' => 'Selesai pilih JPU', 'callback_data' => 'jpu_done']];
+
+        return $rows;
+    }
+
+    private function promptProsecutorPicker(int|string $chatId, string $intro): void
+    {
+        if (Prosecutor::active()->doesntExist()) {
+            $this->reply($chatId, 'Belum ada JPU di data master. Tambah dulu di portal: Data Master → JPU. Ketik /batal.');
+
+            return;
+        }
+
+        $this->reply($chatId, $intro, $this->prosecutorKeyboard([]));
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function selectedProsecutorIds(array $payload): array
+    {
+        return array_values(array_unique(array_map('intval', $payload['prosecutor_ids'] ?? [])));
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function selectedProsecutorNames(array $payload): string
+    {
+        $ids = $this->selectedProsecutorIds($payload);
+
+        if ($ids === []) {
+            return 'belum ada';
+        }
+
+        $names = Prosecutor::query()->whereIn('id', $ids)->orderBy('name')->pluck('name');
+
+        return $names->isEmpty() ? 'belum ada' : $names->implode('; ');
+    }
+
+    /**
+     * @param  array<string, mixed>  $message
+     */
+    private function callbackMessageId(array $message): ?int
+    {
+        return isset($message['message_id']) ? (int) $message['message_id'] : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function prosecutorPickerText(string $context, array $payload): string
+    {
+        return $context."\n\nDipilih: <b>{$this->e($this->selectedProsecutorNames($payload))}</b>\n\nCentang JPU, lalu tekan <b>Selesai pilih JPU</b>.";
+    }
+
+    /**
+     * @return bool true if the callback was handled
+     */
+    private function handleProsecutorCallback(
+        TelegramWhitelist $actor,
+        int|string $chatId,
+        string $callbackId,
+        TelegramConversation $conversation,
+        string $data,
+        ?int $messageId,
+        string $action,
+    ): bool {
+        $step = $conversation->step;
+        $allowed = $action === 'tambah'
+            ? ['awaiting_prosecutors']
+            : ['awaiting_loan_prosecutors', 'awaiting_borrower'];
+
+        if (! in_array($step, $allowed, true)) {
+            return false;
+        }
+
+        $payload = $conversation->payload ?? [];
+
+        if (preg_match('/^jpu_(\d+)$/', $data, $match) === 1) {
+            $id = (int) $match[1];
+            $selected = $this->selectedProsecutorIds($payload);
+
+            if (in_array($id, $selected, true)) {
+                $selected = array_values(array_filter($selected, fn (int $item): bool => $item !== $id));
+                $this->telegram->answerCallbackQuery($callbackId, 'Dilepas');
+            } else {
+                $selected[] = $id;
+                $this->telegram->answerCallbackQuery($callbackId, 'Ditandai');
+            }
+
+            $payload['prosecutor_ids'] = $selected;
+            $this->putConversation((int) $actor->telegram_chat_id, $action, $step === 'awaiting_borrower' ? 'awaiting_loan_prosecutors' : $step, null, $payload);
+
+            $context = $action === 'tambah'
+                ? 'Pilih <b>JPU</b> (boleh lebih dari satu).'
+                : "📤 <b>Pinjam sidang</b>\nPilih <b>JPU peminjam</b> (boleh lebih dari satu).";
+
+            if ($messageId !== null) {
+                $this->telegram->editMessage($chatId, $messageId, $this->prosecutorPickerText($context, $payload), $this->prosecutorKeyboard($selected));
+            }
+
+            return true;
+        }
+
+        if ($data !== 'jpu_done') {
+            return false;
+        }
+
+        $ids = $this->selectedProsecutorIds($payload);
+        $prosecutors = Prosecutor::query()->whereIn('id', $ids)->where('is_active', true)->orderBy('name')->get();
+
+        if ($prosecutors->isEmpty()) {
+            $this->telegram->answerCallbackQuery($callbackId, 'Pilih minimal satu JPU.');
+
+            return true;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
+        $names = $prosecutors->pluck('name')->implode('; ');
+
+        if ($action === 'tambah') {
+            $case = LegalCase::query()->create([
+                'case_number' => (string) $payload['case_number'],
+                'defendant_name' => (string) $payload['defendant_name'],
+                'prosecutor_name' => $names,
+            ]);
+            $case->prosecutors()->sync($prosecutors->pluck('id')->all());
+
+            $payload['case_id'] = $case->id;
+            $payload['prosecutor_name'] = $names;
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_type', null, $payload);
+            $this->reply($chatId, "JPU: <b>{$this->e($names)}</b>\n\nPilih jenis unit fisik yang akan dicatat:", $this->typeKeyboard());
+
+            return true;
+        }
+
+        $payload['borrower_name'] = $names;
+        $this->putConversation((int) $actor->telegram_chat_id, 'pinjam', 'awaiting_court_date', null, $payload);
+        $this->reply($chatId, "JPU peminjam: <b>{$this->e($names)}</b>\n\nKirim tanggal sidang (<code>YYYY-MM-DD</code>).");
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $callback
+     */
+    private function handlePinjamCallback(
+        TelegramWhitelist $actor,
+        int|string $chatId,
+        string $callbackId,
+        TelegramConversation $conversation,
+        string $data,
+        ?int $messageId,
+    ): void {
+        if ($this->handleProsecutorCallback($actor, $chatId, $callbackId, $conversation, $data, $messageId, 'pinjam')) {
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
     }
 
     /**

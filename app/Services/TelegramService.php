@@ -50,6 +50,31 @@ class TelegramService
     }
 
     /**
+     * @param  array<int, array<int, array<string, string>>>|null  $inlineKeyboard
+     */
+    public function editMessage(int|string $chatId, int $messageId, string $text, ?array $inlineKeyboard = null): void
+    {
+        $payload = [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'text' => $text,
+            'parse_mode' => 'HTML',
+        ];
+
+        if ($inlineKeyboard !== null) {
+            $payload['reply_markup'] = json_encode([
+                'inline_keyboard' => $inlineKeyboard,
+            ], JSON_THROW_ON_ERROR);
+        }
+
+        try {
+            $this->call('editMessageText', $payload);
+        } catch (RuntimeException) {
+            // Telegram rejects identical edits; ignore.
+        }
+    }
+
+    /**
      * @param  array<string, mixed>  $options
      */
     public function sendPhoto(int|string $chatId, string $binary, string $caption, ?array $replyMarkup = null, array $options = []): void
@@ -161,6 +186,7 @@ class TelegramService
             ['command' => 'eksekusi', 'description' => 'Catat putusan per item'],
             ['command' => 'rekap', 'description' => 'Ringkasan gudang'],
             ['command' => 'batal', 'description' => 'Batalkan proses'],
+            ['command' => 'batalkan', 'description' => 'Batalkan tindakan yang sedang berjalan'],
             ['command' => 'lisensi', 'description' => 'Aktifkan akses bot dengan kode lisensi'],
             ['command' => 'id', 'description' => 'Tampilkan ID Telegram / grup'],
         ];
