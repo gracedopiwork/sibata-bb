@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class LegalCase extends Model
 {
@@ -32,6 +33,16 @@ class LegalCase extends Model
     public function physicalUnits(): HasMany
     {
         return $this->hasMany(PhysicalUnit::class, 'case_id');
+    }
+
+    public function loans(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            EvidenceLoan::class,
+            PhysicalUnit::class,
+            'case_id',
+            'physical_unit_id'
+        );
     }
 
     public function caseType(): BelongsTo

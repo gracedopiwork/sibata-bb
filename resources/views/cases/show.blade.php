@@ -35,8 +35,8 @@
                         @endif
                         <div class="min-w-0">
                             <a class="font-semibold text-navy-900" href="{{ route('units.show', $unit) }}">{{ $unit->unit_code }}</a>
-                            <p class="text-xs text-navy-500">{{ $unit->unit_type->label() }} · {{ $unit->storage_location }}</p>
-                            <p class="mt-1 text-sm">{{ $unit->itemsSummary(120) }}</p>
+                            <p class="text-xs text-navy-500">{{ $unit->unit_type->label() }} · {{ $unit->storageLocation?->name ?? $unit->storage_location }}</p>
+                            <p class="item-copy mt-1">{{ $unit->itemsSummary(160) }}</p>
                             @unless($unit->hasPhoto())
                                 <p class="mt-1 text-xs text-navy-500">Belum ada foto — unggah di halaman unit.</p>
                             @endunless
@@ -54,6 +54,16 @@
             @endforelse
         </div>
     </div>
+</div>
+
+<div class="mt-4">
+    @include('loans._history', [
+        'loans' => $loans,
+        'showUnit' => true,
+        'heading' => 'Peminjaman BB perkara ini',
+        'subheading' => 'Riwayat pinjam dan kembali untuk semua unit dalam perkara ini',
+        'emptyText' => 'Belum ada peminjaman BB untuk perkara ini.',
+    ])
 </div>
 
 @if(!empty($printIds))

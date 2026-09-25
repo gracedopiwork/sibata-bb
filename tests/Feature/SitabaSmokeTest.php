@@ -307,9 +307,18 @@ class SitabaSmokeTest extends TestCase
             $this->actingAs($admin)
                 ->get(route('items.show', $item))
                 ->assertOk()
-                ->assertSee('Daftar peminjaman')
+                ->assertSee('Daftar peminjaman BB')
                 ->assertSee('Tanggal dipinjam')
                 ->assertSee('Tanggal dikembalikan');
+        }
+
+        if ($unit->legalCase) {
+            $this->actingAs($admin)
+                ->get(route('cases.show', $unit->legalCase))
+                ->assertOk()
+                ->assertSee('Peminjaman BB perkara ini')
+                ->assertSee($unit->unit_code)
+                ->assertSee('Sudah dikembalikan');
         }
     }
 

@@ -10,6 +10,7 @@ use App\Models\AssetType;
 use App\Models\StorageLocation;
 use App\Models\CaseType;
 use App\Models\EvidenceCategory;
+use App\Models\EvidenceLoan;
 use App\Models\LegalCase;
 use App\Models\Prosecutor;
 use App\Services\PackContentsParser;
@@ -138,10 +139,25 @@ class LegalCaseController extends Controller
 
     public function show(LegalCase $case): View
     {
-        $case->load(['caseType', 'prosecutors', 'physicalUnits.items', 'physicalUnits.mutations', 'physicalUnits.photo']);
+        $case->load([
+            'caseType',
+            'prosecutors',
+            'physicalUnits.items',
+            'physicalUnits.mutations',
+            'physicalUnits.photo',
+            'physicalUnits.storageLocation',
+            'loans.physicalUnit',
+            'loans.outboundPhoto',
+            'loans.inboundPhoto',
+        ]);
+
+        $loans = $case->loans
+            ->sortByDesc(fn (EvidenceLoan $loan) => $loan->loaned_at?->timestamp ?? 0)
+            ->values();
 
         return view('cases.show', [
             'case' => $case,
+            'loans' => $loans,
             'printIds' => session('print_ids', []),
         ]);
     }
