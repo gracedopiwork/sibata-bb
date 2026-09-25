@@ -33,6 +33,8 @@ class SitabaSmokeTest extends TestCase
         $this->actingAs($admin)->get('/cases')->assertOk()->assertSee('Register Perkara');
         $this->actingAs($admin)->get('/cases/create')->assertOk()->assertSee('Tempel daftar isi');
         $this->actingAs($admin)->get('/units')->assertOk()->assertSee('Inventaris Fisik');
+        $this->actingAs($admin)->get('/loans')->assertOk()->assertSee('Peminjaman BB');
+        $this->actingAs($admin)->get('/loans/create')->assertOk()->assertSee('Foto saat dipinjam');
         $this->actingAs($admin)->get('/print-labels')->assertOk();
         $this->actingAs($admin)->get('/reports')->assertOk();
         $this->actingAs($admin)->get('/users')->assertOk();
@@ -268,20 +270,28 @@ class SitabaSmokeTest extends TestCase
         $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
         $unit = PhysicalUnit::query()->where('current_status', 'TERSIMPAN_GUDANG')->firstOrFail();
 
+        Storage::fake('public');
+
         $this->actingAs($admin)->post(route('units.loan', $unit), [
-            'borrower_name' => 'JPU Tes Pinjam',
+            'prosecutor_ids' => [Prosecutor::query()->firstOrFail()->id],
             'court_date' => now()->addDay()->toDateString(),
             'notes' => 'Sidang pembuktian',
+            'photo' => UploadedFile::fake()->image('pinjam.jpg', 200, 200),
         ])->assertRedirect();
 
         $this->assertDatabaseHas('physical_units', [
             'id' => $unit->id,
             'current_status' => 'DIPINJAM_SIDANG',
         ]);
+        $this->assertDatabaseHas('bb_loans', [
+            'physical_unit_id' => $unit->id,
+            'returned_at' => null,
+        ]);
 
         $this->actingAs($admin)->post(route('units.return', $unit), [
             'storage_location_id' => $unit->storage_location_id ?? StorageLocation::query()->firstOrFail()->id,
             'notes' => 'Kondisi baik',
+            'photo' => UploadedFile::fake()->image('kembali.jpg', 200, 200),
         ])->assertRedirect();
 
         $this->assertDatabaseHas('physical_units', [

@@ -7,7 +7,9 @@ use App\Enums\MutationType;
 use App\Enums\UnitStatus;
 use App\Enums\UnitType;
 use App\Enums\VerdictStatus;
+use App\Models\EvidenceLoan;
 use App\Models\LegalCase;
+use App\Models\LoanPhoto;
 use App\Models\Mutation;
 use App\Models\PhysicalUnit;
 use App\Models\UnitItem;
@@ -167,34 +169,113 @@ class WarehouseService
         return $count;
     }
 
-    public function loan(PhysicalUnit $unit, string $borrowerName, ?string $courtDate, string $handledBy, ?string $notes = null): Mutation
-    {
+    public function loan(
+        PhysicalUnit $unit,
+        string $borrowerName,
+        ?string $courtDate,
+        string $handledBy,
+        ?string $notes = null,
+        ?string $photoPath = null,
+    ): Mutation {
         if ($unit->current_status !== UnitStatus::TersimpanGudang) {
             throw new \RuntimeException('Unit tidak dalam status tersimpan gudang.');
         }
 
-        return DB::transaction(function () use ($unit, $borrowerName, $courtDate, $handledBy, $notes) {
+        if (EvidenceLoan::query()->where('physical_unit_id', $unit->id)->whereNull('returned_at')->exists()) {
+            throw new \RuntimeException('Unit ini masih memiliki peminjaman yang belum dikembalikan.');
+        }
+
+        return DB::transaction(function () use ($unit, $borrowerName, $courtDate, $handledBy, $notes, $photoPath) {
             $unit->update(['current_status' => UnitStatus::DipinjamSidang]);
 
-            return $this->mutate($unit, MutationType::PinjamSidang, $handledBy, $notes, $borrowerName, $courtDate);
+            $mutation = $this->mutate($unit, MutationType::PinjamSidang, $handledBy, $notes, $borrowerName, $courtDate);
+
+            $loan = EvidenceLoan::query()->create([
+                'physical_unit_id' => $unit->id,
+                'borrower_name' => $borrowerName,
+                'court_date' => $courtDate,
+                'notes' => $notes,
+                'loaned_by' => $handledBy,
+                'loaned_at' => now(),
+                'loan_photo_path' => $photoPath,
+            ]);
+
+            $this->persistLoanPhoto($loan, 'loan', $photoPath);
+
+            return $mutation;
         });
     }
 
-    public function returnToWarehouse(PhysicalUnit $unit, string $storageLocation, string $handledBy, ?string $notes = null, ?int $storageLocationId = null): Mutation
-    {
+    public function returnToWarehouse(
+        PhysicalUnit $unit,
+        string $storageLocation,
+        string $handledBy,
+        ?string $notes = null,
+        ?int $storageLocationId = null,
+        ?string $photoPath = null,
+    ): Mutation {
         if ($unit->current_status !== UnitStatus::DipinjamSidang) {
             throw new \RuntimeException('Unit tidak sedang dipinjam sidang.');
         }
 
-        return DB::transaction(function () use ($unit, $storageLocation, $handledBy, $notes, $storageLocationId) {
+        return DB::transaction(function () use ($unit, $storageLocation, $handledBy, $notes, $storageLocationId, $photoPath) {
             $unit->update([
                 'current_status' => UnitStatus::TersimpanGudang,
                 'storage_location' => $storageLocation,
                 'storage_location_id' => $storageLocationId,
             ]);
 
-            return $this->mutate($unit, MutationType::KembaliGudang, $handledBy, $notes);
+            $mutation = $this->mutate($unit, MutationType::KembaliGudang, $handledBy, $notes);
+
+            $loan = EvidenceLoan::query()
+                ->where('physical_unit_id', $unit->id)
+                ->whereNull('returned_at')
+                ->latest('id')
+                ->first();
+
+            if ($loan === null) {
+                $loan = EvidenceLoan::query()->create([
+                    'physical_unit_id' => $unit->id,
+                    'borrower_name' => 'Tidak tercatat',
+                    'loaned_by' => $handledBy,
+                    'loaned_at' => now(),
+                ]);
+            }
+
+            $loan->update([
+                'returned_at' => now(),
+                'returned_by' => $handledBy,
+                'return_notes' => $notes,
+                'return_storage_location' => $storageLocation,
+                'return_storage_location_id' => $storageLocationId,
+                'return_photo_path' => $photoPath,
+            ]);
+
+            $this->persistLoanPhoto($loan, 'return', $photoPath);
+
+            return $mutation;
         });
+    }
+
+    private function persistLoanPhoto(EvidenceLoan $loan, string $kind, ?string $photoPath): void
+    {
+        if (! is_string($photoPath) || $photoPath === '' || ! Storage::disk('public')->exists($photoPath)) {
+            return;
+        }
+
+        $contents = Storage::disk('public')->get($photoPath);
+        if ($contents === null || $contents === '') {
+            return;
+        }
+
+        LoanPhoto::query()->updateOrCreate(
+            ['bb_loan_id' => $loan->id, 'kind' => $kind],
+            [
+                'mime' => Storage::disk('public')->mimeType($photoPath) ?: 'image/jpeg',
+                'path' => $photoPath,
+                'data' => $contents,
+            ],
+        );
     }
 
     public function executeItem(

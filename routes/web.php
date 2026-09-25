@@ -15,6 +15,7 @@ use App\Http\Controllers\CaseTypeController;
 use App\Http\Controllers\EvidenceCategoryController;
 use App\Http\Controllers\AssetTypeController;
 use App\Http\Controllers\StorageLocationController;
+use App\Http\Controllers\LoanController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -47,6 +48,13 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('units/{unit}/children/bulk', [PhysicalUnitController::class, 'addChildrenBulk'])->name('units.children.bulk');
         Route::post('units/{unit}/photo', [PhysicalUnitController::class, 'updatePhoto'])->name('units.photo.update');
         Route::post('units/{unit}/items/{item}/execute', [PhysicalUnitController::class, 'execute'])->name('units.items.execute');
+
+        Route::get('loans', [LoanController::class, 'index'])->name('loans.index');
+        Route::get('loans/create', [LoanController::class, 'create'])->name('loans.create');
+        Route::post('loans', [LoanController::class, 'store'])->name('loans.store');
+        Route::get('loans/{loan}', [LoanController::class, 'show'])->name('loans.show');
+        Route::get('loans/{loan}/photo/{kind}', [LoanController::class, 'photo'])->name('loans.photo');
+        Route::post('loans/{loan}/return', [LoanController::class, 'returnLoan'])->name('loans.return');
 
         Route::get('print-labels', [PrintLabelController::class, 'index'])->name('print-labels.index');
         Route::get('print-labels/sheet', [PrintLabelController::class, 'sheet'])->name('print-labels.sheet');

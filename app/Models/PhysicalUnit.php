@@ -70,6 +70,16 @@ class PhysicalUnit extends Model
         return $this->hasMany(Mutation::class, 'physical_unit_id')->latest('id');
     }
 
+    public function loans(): HasMany
+    {
+        return $this->hasMany(EvidenceLoan::class)->latest('id');
+    }
+
+    public function activeLoan(): HasOne
+    {
+        return $this->hasOne(EvidenceLoan::class)->whereNull('returned_at')->latestOfMany();
+    }
+
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
         if ($term === null || trim($term) === '') {

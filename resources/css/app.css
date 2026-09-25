@@ -65,4 +65,12 @@
     .nav-link-active {
         @apply bg-gold-500/15 text-gold-300 ring-1 ring-gold-500/30;
     }
+
+    .nav-group {
+        @apply mt-3 rounded-2xl border border-white/10 bg-white/5 p-2;
+    }
+
+    .nav-group-label {
+        @apply px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-navy-100/40;
+    }
 }

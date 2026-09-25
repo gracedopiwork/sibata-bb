@@ -25,21 +25,30 @@
                 <p class="mt-1 text-xs text-navy-100/70">Tata kelola barang bukti</p>
             </div>
             <nav class="flex-1 space-y-1 overflow-y-auto p-4">
+                <p class="px-3 text-[11px] font-bold uppercase tracking-wider text-navy-100/40">Operasional</p>
                 <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}">Dashboard</a>
                 <a href="{{ route('cases.index') }}" class="nav-link {{ request()->routeIs('cases.*') ? 'nav-link-active' : '' }}">Register Perkara</a>
-                <p class="px-3 pt-4 text-[11px] font-bold uppercase tracking-wider text-navy-100/40">Data Master</p>
-                <a href="{{ route('prosecutors.index') }}" class="nav-link {{ request()->routeIs('prosecutors.*') ? 'nav-link-active' : '' }}">JPU</a>
-                <a href="{{ route('case-types.index') }}" class="nav-link {{ request()->routeIs('case-types.*') ? 'nav-link-active' : '' }}">Jenis Perkara</a>
-                <a href="{{ route('asset-types.index') }}" class="nav-link {{ request()->routeIs('asset-types.*') ? 'nav-link-active' : '' }}">Jenis Aset</a>
-                <a href="{{ route('evidence-categories.index') }}" class="nav-link {{ request()->routeIs('evidence-categories.*') ? 'nav-link-active' : '' }}">Jenis BB</a>
-                <a href="{{ route('storage-locations.index') }}" class="nav-link {{ request()->routeIs('storage-locations.*') ? 'nav-link-active' : '' }}">Tempat Penyimpanan</a>
                 <a href="{{ route('units.index') }}" class="nav-link {{ request()->routeIs('units.*') ? 'nav-link-active' : '' }}">Inventaris Fisik</a>
+                <a href="{{ route('loans.index') }}" class="nav-link {{ request()->routeIs('loans.*') ? 'nav-link-active' : '' }}">Peminjaman BB</a>
                 <a href="{{ route('print-labels.index') }}" class="nav-link {{ request()->routeIs('print-labels.*') ? 'nav-link-active' : '' }}">Antrean Cetak Label</a>
                 <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'nav-link-active' : '' }}">Laporan / Ekspor</a>
+
+                <div class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-2">
+                    <p class="px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-navy-100/40">Data Master</p>
+                    <a href="{{ route('prosecutors.index') }}" class="nav-link {{ request()->routeIs('prosecutors.*') ? 'nav-link-active' : '' }}">JPU</a>
+                    <a href="{{ route('case-types.index') }}" class="nav-link {{ request()->routeIs('case-types.*') ? 'nav-link-active' : '' }}">Jenis Perkara</a>
+                    <a href="{{ route('asset-types.index') }}" class="nav-link {{ request()->routeIs('asset-types.*') ? 'nav-link-active' : '' }}">Jenis Aset</a>
+                    <a href="{{ route('evidence-categories.index') }}" class="nav-link {{ request()->routeIs('evidence-categories.*') ? 'nav-link-active' : '' }}">Jenis BB</a>
+                    <a href="{{ route('storage-locations.index') }}" class="nav-link {{ request()->routeIs('storage-locations.*') ? 'nav-link-active' : '' }}">Tempat Penyimpanan</a>
+                </div>
+
                 @if(auth()->user()->canManageUsers())
-                    <a href="{{ route('bot.edit') }}" class="nav-link {{ request()->routeIs('bot.*') ? 'nav-link-active' : '' }}">Bot Telegram</a>
-                    <a href="{{ route('whitelist.index') }}" class="nav-link {{ request()->routeIs('whitelist.*') ? 'nav-link-active' : '' }}">Akses Telegram</a>
-                    <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'nav-link-active' : '' }}">Pengguna &amp; Lisensi</a>
+                    <div class="mt-3 rounded-2xl border border-white/10 bg-white/5 p-2">
+                        <p class="px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-navy-100/40">Sistem</p>
+                        <a href="{{ route('bot.edit') }}" class="nav-link {{ request()->routeIs('bot.*') ? 'nav-link-active' : '' }}">Bot Telegram</a>
+                        <a href="{{ route('whitelist.index') }}" class="nav-link {{ request()->routeIs('whitelist.*') ? 'nav-link-active' : '' }}">Akses Telegram</a>
+                        <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'nav-link-active' : '' }}">Pengguna &amp; Lisensi</a>
+                    </div>
                 @endif
             </nav>
             <div class="border-t border-white/10 p-4">

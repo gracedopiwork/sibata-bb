@@ -884,6 +884,21 @@ class TelegramBotService
                 return;
             }
 
+            $payload['court_date'] = $date;
+            $this->putConversation((int) $actor->telegram_chat_id, 'pinjam', 'awaiting_loan_photo', null, $payload);
+            $this->reply($chatId, 'Kirim <b>foto kondisi BB saat dipinjam</b> (wajib).');
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_loan_photo') {
+            $photoPath = $this->optionalPhotoPath($message, $text, 'loans');
+            if ($photoPath === false || $photoPath === null) {
+                $this->reply($chatId, 'Foto wajib. Kirim foto kondisi BB saat dipinjam.');
+
+                return;
+            }
+
             $unit = PhysicalUnit::query()->find((int) ($payload['unit_id'] ?? 0));
             if ($unit === null) {
                 $this->clearConversation((int) $actor->telegram_chat_id);
@@ -893,7 +908,14 @@ class TelegramBotService
             }
 
             try {
-                $this->warehouse->loan($unit, (string) $payload['borrower_name'], $date, $actor->user_name);
+                $this->warehouse->loan(
+                    $unit,
+                    (string) $payload['borrower_name'],
+                    (string) ($payload['court_date'] ?? ''),
+                    $actor->user_name,
+                    null,
+                    $photoPath,
+                );
             } catch (RuntimeException $exception) {
                 $this->clearConversation((int) $actor->telegram_chat_id);
                 $this->reply($chatId, $exception->getMessage());
@@ -903,7 +925,7 @@ class TelegramBotService
 
             $unit->refresh()->load(['legalCase', 'items']);
             $this->clearConversation((int) $actor->telegram_chat_id);
-            $this->reply($chatId, "✅ Dipinjam sidang.\n{$this->unitHeader($unit)}\nJPU: {$this->e((string) $payload['borrower_name'])}\nSidang: {$date}");
+            $this->reply($chatId, "✅ Dipinjam sidang.\n{$this->unitHeader($unit)}\nJPU: {$this->e((string) $payload['borrower_name'])}\nSidang: {$this->e((string) ($payload['court_date'] ?? ''))}");
             $this->broadcastGroup("📤 Pinjam sidang {$this->e($unit->unit_code)} — {$this->e((string) $payload['borrower_name'])}");
         }
     }
@@ -947,6 +969,21 @@ class TelegramBotService
         }
 
         if ($conversation->step === 'awaiting_notes') {
+            $payload['notes'] = $text === '-' ? null : $text;
+            $this->putConversation((int) $actor->telegram_chat_id, 'kembali', 'awaiting_return_photo', null, $payload);
+            $this->reply($chatId, 'Kirim <b>foto kondisi BB saat dikembalikan</b> (wajib).');
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_return_photo') {
+            $photoPath = $this->optionalPhotoPath($message, $text, 'loans');
+            if ($photoPath === false || $photoPath === null) {
+                $this->reply($chatId, 'Foto wajib. Kirim foto kondisi BB saat dikembalikan.');
+
+                return;
+            }
+
             $unit = PhysicalUnit::query()->find((int) ($payload['unit_id'] ?? 0));
             if ($unit === null) {
                 $this->clearConversation((int) $actor->telegram_chat_id);
@@ -955,15 +992,14 @@ class TelegramBotService
                 return;
             }
 
-            $notes = $text === '-' ? null : $text;
-
             try {
                 $this->warehouse->returnToWarehouse(
                     $unit,
                     (string) $payload['storage_location'],
                     $actor->user_name,
-                    $notes,
+                    $payload['notes'] ?? null,
                     isset($payload['storage_location_id']) ? (int) $payload['storage_location_id'] : null,
+                    $photoPath,
                 );
             } catch (RuntimeException $exception) {
                 $this->clearConversation((int) $actor->telegram_chat_id);

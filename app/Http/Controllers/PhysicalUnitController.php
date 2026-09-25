@@ -7,6 +7,7 @@ use App\Enums\UnitType;
 use App\Enums\VerdictStatus;
 use App\Models\EvidenceCategory;
 use App\Models\PhysicalUnit;
+use App\Models\Prosecutor;
 use App\Models\StorageLocation;
 use App\Models\UnitItem;
 use App\Models\UnitPhoto;
@@ -57,30 +58,40 @@ class PhysicalUnitController extends Controller
             )),
             'categories' => EvidenceCategory::active()->get(),
             'storageLocations' => StorageLocation::active()->get(),
+            'prosecutors' => Prosecutor::active()->get(),
         ]);
     }
 
     public function loan(Request $request, PhysicalUnit $unit): RedirectResponse
     {
         $data = $request->validate([
-            'borrower_name' => ['required', 'string', 'max:255'],
+            'prosecutor_ids' => ['required', 'array', 'min:1'],
+            'prosecutor_ids.*' => ['integer', 'exists:prosecutors,id'],
             'court_date' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
+            'photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:12288'],
         ]);
+
+        $borrower = Prosecutor::query()
+            ->whereIn('id', $data['prosecutor_ids'])
+            ->orderBy('name')
+            ->pluck('name')
+            ->implode('; ');
 
         try {
             $this->warehouse->loan(
                 $unit,
-                $data['borrower_name'],
+                $borrower,
                 $data['court_date'],
                 $request->user()?->name ?? 'Web PB3R',
                 $data['notes'] ?? null,
+                $request->file('photo')->store('loans', 'public'),
             );
         } catch (RuntimeException $exception) {
-            return back()->withErrors(['borrower_name' => $exception->getMessage()]);
+            return back()->withErrors(['prosecutor_ids' => $exception->getMessage()]);
         }
 
-        return back()->with('status', 'Unit ditandai dipinjam sidang.');
+        return redirect()->route('loans.index')->with('status', 'Peminjaman BB tercatat.');
     }
 
     public function returnToWarehouse(Request $request, PhysicalUnit $unit): RedirectResponse
@@ -88,6 +99,7 @@ class PhysicalUnitController extends Controller
         $data = $request->validate([
             'storage_location_id' => ['required', 'exists:storage_locations,id'],
             'notes' => ['nullable', 'string'],
+            'photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:12288'],
         ]);
 
         $location = StorageLocation::query()->findOrFail((int) $data['storage_location_id']);
@@ -99,6 +111,7 @@ class PhysicalUnitController extends Controller
                 $request->user()?->name ?? 'Web PB3R',
                 $data['notes'] ?? null,
                 $location->id,
+                $request->file('photo')->store('loans', 'public'),
             );
         } catch (RuntimeException $exception) {
             return back()->withErrors(['storage_location_id' => $exception->getMessage()]);

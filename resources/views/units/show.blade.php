@@ -131,18 +131,30 @@
 
     <div class="space-y-6">
         @if($unit->current_status->value === 'TERSIMPAN_GUDANG')
-            <form class="card space-y-3" method="POST" action="{{ route('units.loan', $unit) }}">
+            <form class="card space-y-3" method="POST" action="{{ route('units.loan', $unit) }}" enctype="multipart/form-data">
                 @csrf
                 <h3 class="font-serif text-lg">Pinjam sidang</h3>
-                <input class="field" name="borrower_name" placeholder="Nama JPU" required>
+                <p class="text-xs text-navy-500">Atau catat lewat menu <a class="font-semibold underline" href="{{ route('loans.create') }}">Peminjaman BB</a>.</p>
+                <div class="max-h-40 space-y-1 overflow-y-auto rounded-xl border border-navy-100 p-2">
+                    @foreach ($prosecutors as $prosecutor)
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" name="prosecutor_ids[]" value="{{ $prosecutor->id }}">
+                            <span>{{ $prosecutor->name }}</span>
+                        </label>
+                    @endforeach
+                </div>
                 <input class="field" type="date" name="court_date" required>
                 <textarea class="field" name="notes" rows="2" placeholder="Catatan"></textarea>
+                <div>
+                    <label class="label">Foto saat dipinjam</label>
+                    <input class="field" type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" required>
+                </div>
                 <button class="btn-gold w-full">Catat peminjaman</button>
             </form>
         @endif
 
         @if($unit->current_status->value === 'DIPINJAM_SIDANG')
-            <form class="card space-y-3" method="POST" action="{{ route('units.return', $unit) }}">
+            <form class="card space-y-3" method="POST" action="{{ route('units.return', $unit) }}" enctype="multipart/form-data">
                 @csrf
                 <h3 class="font-serif text-lg">Kembali gudang</h3>
                 <select class="field" name="storage_location_id" required>
@@ -151,6 +163,10 @@
                     @endforeach
                 </select>
                 <textarea class="field" name="notes" rows="2" placeholder="Kondisi fisik"></textarea>
+                <div>
+                    <label class="label">Foto saat dikembalikan</label>
+                    <input class="field" type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" required>
+                </div>
                 <button class="btn-primary w-full">Catat pengembalian</button>
             </form>
         @endif
