@@ -479,21 +479,6 @@ class TelegramBotService
             return;
         }
 
-        if ($conversation->step === 'awaiting_pack_category') {
-            $category = $this->resolveCategoryFromText($text);
-            if ($category === null) {
-                $this->reply($chatId, $this->categoryPrompt('isi paket'), $this->categoryKeyboard());
-
-                return;
-            }
-
-            $payload['pack_category'] = $category;
-            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_contents', null, $payload);
-            $this->reply($chatId, $this->packContentsHelp($category));
-
-            return;
-        }
-
         if ($conversation->step === 'awaiting_single_location') {
             if (! $this->applyTypedStorageLocation($payload, $text)) {
                 $this->reply($chatId, 'Pilih tempat penyimpanan dari tombol, atau ketik nama lokasi yang terdaftar.', $this->locationKeyboard());
@@ -560,7 +545,7 @@ class TelegramBotService
             return;
         }
 
-        if ($conversation->step === 'awaiting_pack_contents' || $conversation->step === 'awaiting_child_name') {
+        if ($conversation->step === 'awaiting_child_name') {
             if ($this->isSkipCommand($text)) {
                 $this->finishPackContents($actor, $chatId, $payload);
 
@@ -568,34 +553,29 @@ class TelegramBotService
             }
 
             if ($text === '') {
-                $this->reply($chatId, $this->packContentsHelp());
+                $this->reply($chatId, $this->childNamePrompt((int) ($payload['child_index'] ?? 1)));
 
                 return;
             }
 
-            $items = $this->packContents->parse($text, isset($payload['pack_category']) ? (string) $payload['pack_category'] : null);
-            if ($items === []) {
-                $this->reply($chatId, $this->packContentsHelp());
+            [$name, $qty] = $this->parseNameAndQty($text);
+            $payload['child_name'] = $name;
+            $payload['child_qty'] = $qty;
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_category', null, $payload);
+            $this->reply($chatId, "Pilih <b>jenis</b> untuk <b>{$this->e($name)}</b>:", $this->categoryKeyboard());
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_child_category') {
+            $category = $this->resolveCategoryFromText($text);
+            if ($category === null) {
+                $this->reply($chatId, "Pilih <b>jenis</b> untuk <b>{$this->e((string) ($payload['child_name'] ?? 'barang ini'))}</b>:", $this->categoryKeyboard());
 
                 return;
             }
 
-            $unit = PhysicalUnit::query()->find((int) ($payload['unit_id'] ?? 0));
-            if ($unit === null) {
-                $this->clearConversation((int) $actor->telegram_chat_id);
-                $this->reply($chatId, 'Paket tidak ditemukan. Mulai ulang /tambah.');
-
-                return;
-            }
-
-            $count = $this->warehouse->addPackChildren($unit, $items);
-            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_loop', null, $payload);
-            $this->reply($chatId, "✅ {$count} isi paket ditambahkan. Lanjut tempel daftar lagi, atau selesai.", [
-                [
-                    ['text' => '+ Tempel Daftar Lagi', 'callback_data' => 'pack_more'],
-                    ['text' => 'Selesai Paket Ini', 'callback_data' => 'pack_done'],
-                ],
-            ]);
+            $this->savePackChild($actor, $chatId, $payload, $category);
 
             return;
         }
@@ -638,7 +618,7 @@ class TelegramBotService
             return;
         }
 
-        if (str_starts_with($data, 'cat_') && in_array($conversation->step, ['awaiting_single_category', 'awaiting_pack_category', 'awaiting_child_category'], true)) {
+        if (str_starts_with($data, 'cat_') && in_array($conversation->step, ['awaiting_single_category', 'awaiting_child_category'], true)) {
             $category = EvidenceCategory::activeCode(substr($data, 4)) ?? $this->resolveCategoryFromText(substr($data, 4));
             if ($category === null) {
                 $this->telegram->answerCallbackQuery($callbackId, 'Jenis BB tidak valid.');
@@ -652,14 +632,6 @@ class TelegramBotService
                 $payload['category'] = $category;
                 $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_location', null, $payload);
                 $this->reply($chatId, 'Pilih <b>tempat penyimpanan</b>:', $this->locationKeyboard());
-
-                return;
-            }
-
-            if ($conversation->step === 'awaiting_pack_category') {
-                $payload['pack_category'] = $category;
-                $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_contents', null, $payload);
-                $this->reply($chatId, $this->packContentsHelp($category));
 
                 return;
             }
@@ -688,9 +660,11 @@ class TelegramBotService
 
         if ($data === 'pack_more') {
             $this->telegram->answerCallbackQuery($callbackId);
+            $index = ((int) ($payload['child_index'] ?? 1)) + 1;
+            $payload['child_index'] = $index;
             unset($payload['child_name'], $payload['child_qty']);
-            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_category', null, $payload);
-            $this->reply($chatId, $this->categoryPrompt('isi paket berikutnya'), $this->categoryKeyboard());
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_name', null, $payload);
+            $this->reply($chatId, $this->childNamePrompt($index));
 
             return;
         }
@@ -808,11 +782,11 @@ class TelegramBotService
         );
 
         $payload['unit_id'] = $unit->id;
-        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_category', null, $payload);
+        $payload['child_index'] = 1;
+        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_name', null, $payload);
         $this->reply(
             $chatId,
-            "✅ Wadah <code>{$this->e($unit->unit_code)}</code> tercatat.\n\n".$this->categoryPrompt('isi paket'),
-            $this->categoryKeyboard()
+            "✅ Wadah <code>{$this->e($unit->unit_code)}</code> tercatat.\n\n".$this->childNamePrompt(1)
         );
     }
 
@@ -836,13 +810,11 @@ class TelegramBotService
         ]);
     }
 
-    private function packContentsHelp(?string $category = null): string
+    private function childNamePrompt(int $index): string
     {
-        $jenis = $category !== null ? EvidenceCategory::labelFor($category) : 'yang dipilih';
-
-        return "Tempel <b>daftar isi</b> dari BA, satu baris per barang. Jenis BB default: <b>{$this->e($jenis)}</b>.\n\n"
-            ."Contoh:\n<code>2 sachet sabu 0,5 gram\n1 unit timbangan | ELEKTRONIK\nHP Vivo Y21 | ELEKTRONIK | 1 unit</code>\n\n"
-            .'Baris tanpa kategori memakai jenis yang baru dipilih. Ketik <code>/skip</code> jika rincian dilengkapi nanti.';
+        return "Kirim <b>barang bukti ke-{$index}</b> di dalam segel (nama dan jumlah).\n"
+            ."Contoh: <code>2 sachet sabu 0,5 gram</code> atau <code>HP Vivo Y21 | 1 unit</code>\n\n"
+            .'Setelah itu pilih jenisnya (Narkotika, Elektronik, dst). Ketik <code>/skip</code> jika isi dilengkapi nanti.';
     }
 
     private function categoryPrompt(string $target = 'barang bukti'): string
@@ -903,9 +875,10 @@ class TelegramBotService
         );
 
         $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_loop', null, $payload);
-        $this->reply($chatId, 'Isi paket ditambahkan. Lanjut?', [
+        $jenis = EvidenceCategory::labelFor($category);
+        $this->reply($chatId, "✅ <b>{$this->e((string) $payload['child_name'])}</b> tercatat sebagai <b>{$this->e($jenis)}</b>.\nTambah barang berikutnya?", [
             [
-                ['text' => '+ Tambah Isi Lain', 'callback_data' => 'pack_more'],
+                ['text' => '+ Tambah Barang Lain', 'callback_data' => 'pack_more'],
                 ['text' => 'Selesai Paket Ini', 'callback_data' => 'pack_done'],
             ],
         ]);
