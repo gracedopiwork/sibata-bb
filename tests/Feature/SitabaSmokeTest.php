@@ -24,7 +24,7 @@ class SitabaSmokeTest extends TestCase
 
     public function test_admin_can_open_dashboard_and_registers(): void
     {
-        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
 
         $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('Dashboard PB3R');
         $this->actingAs($admin)->get('/cases')->assertOk()->assertSee('Register Perkara');
@@ -64,7 +64,7 @@ class SitabaSmokeTest extends TestCase
 
     public function test_admin_login_requires_valid_license(): void
     {
-        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
 
         $this->post('/login', [
             'email' => $admin->email,
@@ -92,7 +92,7 @@ class SitabaSmokeTest extends TestCase
 
     public function test_creating_user_issues_license(): void
     {
-        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
         $email = 'lisensi.uji.'.now()->format('Hisu').'@kejari-wajo.go.id';
 
         $response = $this->actingAs($admin)->post('/users', [
@@ -119,7 +119,7 @@ class SitabaSmokeTest extends TestCase
 
     public function test_revoked_license_cannot_login(): void
     {
-        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
         $target = User::factory()->create([
             'role' => UserRole::Admin,
             'is_active' => true,
@@ -157,7 +157,7 @@ class SitabaSmokeTest extends TestCase
 
     public function test_admin_can_register_case_with_single_and_pack(): void
     {
-        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
 
         $caseNumber = 'REG-TEST/PID.SUS/'.now()->format('His');
 
@@ -203,7 +203,7 @@ class SitabaSmokeTest extends TestCase
 
     public function test_admin_can_loan_and_return_unit(): void
     {
-        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
         $unit = PhysicalUnit::query()->where('current_status', 'TERSIMPAN_GUDANG')->firstOrFail();
 
         $this->actingAs($admin)->post(route('units.loan', $unit), [
@@ -230,7 +230,7 @@ class SitabaSmokeTest extends TestCase
 
     public function test_print_sheet_renders_for_admin(): void
     {
-        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
         $unit = PhysicalUnit::query()->firstOrFail();
 
         $this->actingAs($admin)
@@ -242,7 +242,7 @@ class SitabaSmokeTest extends TestCase
 
     public function test_already_printed_unit_can_be_reprinted(): void
     {
-        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
         $unit = PhysicalUnit::query()->firstOrFail();
         $unit->update(['is_printed' => true]);
 
