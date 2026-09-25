@@ -46,9 +46,26 @@ class PhysicalUnitController extends Controller
         ]);
     }
 
+    public function seals(Request $request): View
+    {
+        $units = PhysicalUnit::query()
+            ->with(['legalCase', 'items', 'assetType', 'photo'])
+            ->where('unit_type', UnitType::Pack)
+            ->search($request->string('q')->toString())
+            ->when($request->filled('status'), fn ($query) => $query->where('current_status', $request->string('status')))
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('seals.index', [
+            'units' => $units,
+            'statuses' => UnitStatus::cases(),
+        ]);
+    }
+
     public function show(PhysicalUnit $unit): View
     {
-        $unit->load(['legalCase', 'items', 'mutations', 'assetType', 'storageLocation']);
+        $unit->load(['legalCase', 'items', 'mutations', 'assetType', 'storageLocation', 'loans.outboundPhoto', 'loans.inboundPhoto']);
 
         return view('units.show', [
             'unit' => $unit,

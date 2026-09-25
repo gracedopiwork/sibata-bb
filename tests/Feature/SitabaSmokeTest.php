@@ -8,6 +8,7 @@ use App\Models\CaseType;
 use App\Models\PhysicalUnit;
 use App\Models\Prosecutor;
 use App\Models\StorageLocation;
+use App\Models\UnitItem;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -33,6 +34,8 @@ class SitabaSmokeTest extends TestCase
         $this->actingAs($admin)->get('/cases')->assertOk()->assertSee('Register Perkara');
         $this->actingAs($admin)->get('/cases/create')->assertOk()->assertSee('Tempel daftar isi');
         $this->actingAs($admin)->get('/units')->assertOk()->assertSee('Inventaris Fisik');
+        $this->actingAs($admin)->get('/items')->assertOk()->assertSee('Daftar Barang Bukti');
+        $this->actingAs($admin)->get('/seals')->assertOk()->assertSee('Daftar Segel');
         $this->actingAs($admin)->get('/loans')->assertOk()->assertSee('Peminjaman BB');
         $this->actingAs($admin)->get('/loans/create')->assertOk()->assertSee('Foto saat dipinjam');
         $this->actingAs($admin)->get('/print-labels')->assertOk();
@@ -298,6 +301,16 @@ class SitabaSmokeTest extends TestCase
             'id' => $unit->id,
             'current_status' => 'TERSIMPAN_GUDANG',
         ]);
+
+        $item = $unit->items()->first();
+        if ($item !== null) {
+            $this->actingAs($admin)
+                ->get(route('items.show', $item))
+                ->assertOk()
+                ->assertSee('Daftar peminjaman')
+                ->assertSee('Tanggal dipinjam')
+                ->assertSee('Tanggal dikembalikan');
+        }
     }
 
     public function test_print_sheet_renders_for_admin(): void

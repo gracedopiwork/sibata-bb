@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\EvidenceLoan;
+use App\Models\UnitItem;
 use Carbon\Carbon;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Route;
@@ -20,5 +21,6 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale(config('app.locale'));
         Paginator::useTailwind();
         Route::model('loan', EvidenceLoan::class);
+        Route::model('item', UnitItem::class);
     }
 }

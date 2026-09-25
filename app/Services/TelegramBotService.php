@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\EvidenceCategory;
 use App\Models\StorageLocation;
+use App\Enums\ItemCategory;
 use App\Enums\TelegramAccessRole;
 use App\Enums\UnitStatus;
 use App\Enums\UnitType;
@@ -458,7 +459,37 @@ class TelegramBotService
             $payload['item_name'] = $name;
             $payload['quantity'] = $qty;
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_category', null, $payload);
-            $this->reply($chatId, 'Pilih kategori barang:', $this->categoryKeyboard());
+            $this->reply($chatId, $this->categoryPrompt(), $this->categoryKeyboard());
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_single_category') {
+            $category = $this->resolveCategoryFromText($text);
+            if ($category === null) {
+                $this->reply($chatId, $this->categoryPrompt(), $this->categoryKeyboard());
+
+                return;
+            }
+
+            $payload['category'] = $category;
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_location', null, $payload);
+            $this->reply($chatId, 'Pilih <b>tempat penyimpanan</b>:', $this->locationKeyboard());
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_pack_category') {
+            $category = $this->resolveCategoryFromText($text);
+            if ($category === null) {
+                $this->reply($chatId, $this->categoryPrompt('isi paket'), $this->categoryKeyboard());
+
+                return;
+            }
+
+            $payload['pack_category'] = $category;
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_contents', null, $payload);
+            $this->reply($chatId, $this->packContentsHelp($category));
 
             return;
         }
@@ -542,7 +573,7 @@ class TelegramBotService
                 return;
             }
 
-            $items = $this->packContents->parse($text);
+            $items = $this->packContents->parse($text, isset($payload['pack_category']) ? (string) $payload['pack_category'] : null);
             if ($items === []) {
                 $this->reply($chatId, $this->packContentsHelp());
 
@@ -607,10 +638,10 @@ class TelegramBotService
             return;
         }
 
-        if (str_starts_with($data, 'cat_') && in_array($conversation->step, ['awaiting_single_category', 'awaiting_child_category'], true)) {
-            $category = EvidenceCategory::activeCode(substr($data, 4));
+        if (str_starts_with($data, 'cat_') && in_array($conversation->step, ['awaiting_single_category', 'awaiting_pack_category', 'awaiting_child_category'], true)) {
+            $category = EvidenceCategory::activeCode(substr($data, 4)) ?? $this->resolveCategoryFromText(substr($data, 4));
             if ($category === null) {
-                $this->telegram->answerCallbackQuery($callbackId, 'Kategori tidak valid.');
+                $this->telegram->answerCallbackQuery($callbackId, 'Jenis BB tidak valid.');
 
                 return;
             }
@@ -621,6 +652,14 @@ class TelegramBotService
                 $payload['category'] = $category;
                 $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_location', null, $payload);
                 $this->reply($chatId, 'Pilih <b>tempat penyimpanan</b>:', $this->locationKeyboard());
+
+                return;
+            }
+
+            if ($conversation->step === 'awaiting_pack_category') {
+                $payload['pack_category'] = $category;
+                $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_contents', null, $payload);
+                $this->reply($chatId, $this->packContentsHelp($category));
 
                 return;
             }
@@ -650,8 +689,8 @@ class TelegramBotService
         if ($data === 'pack_more') {
             $this->telegram->answerCallbackQuery($callbackId);
             unset($payload['child_name'], $payload['child_qty']);
-            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_contents', null, $payload);
-            $this->reply($chatId, $this->packContentsHelp());
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_category', null, $payload);
+            $this->reply($chatId, $this->categoryPrompt('isi paket berikutnya'), $this->categoryKeyboard());
 
             return;
         }
@@ -769,10 +808,11 @@ class TelegramBotService
         );
 
         $payload['unit_id'] = $unit->id;
-        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_contents', null, $payload);
+        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_category', null, $payload);
         $this->reply(
             $chatId,
-            "✅ Wadah <code>{$this->e($unit->unit_code)}</code> tercatat.\n\n".$this->packContentsHelp()
+            "✅ Wadah <code>{$this->e($unit->unit_code)}</code> tercatat.\n\n".$this->categoryPrompt('isi paket'),
+            $this->categoryKeyboard()
         );
     }
 
@@ -796,11 +836,49 @@ class TelegramBotService
         ]);
     }
 
-    private function packContentsHelp(): string
+    private function packContentsHelp(?string $category = null): string
     {
-        return "Tempel <b>daftar isi</b> dari BA, satu baris per barang. Segel tidak perlu dibuka.\n\n"
+        $jenis = $category !== null ? EvidenceCategory::labelFor($category) : 'yang dipilih';
+
+        return "Tempel <b>daftar isi</b> dari BA, satu baris per barang. Jenis BB default: <b>{$this->e($jenis)}</b>.\n\n"
             ."Contoh:\n<code>2 sachet sabu 0,5 gram\n1 unit timbangan | ELEKTRONIK\nHP Vivo Y21 | ELEKTRONIK | 1 unit</code>\n\n"
-            .'Ketik <code>/skip</code> jika rincian dilengkapi nanti.';
+            .'Baris tanpa kategori memakai jenis yang baru dipilih. Ketik <code>/skip</code> jika rincian dilengkapi nanti.';
+    }
+
+    private function categoryPrompt(string $target = 'barang bukti'): string
+    {
+        return "Pilih <b>jenis {$target}</b>:\nNarkotika, Elektronik, Kendaraan, Senjata, Dokumen, atau Lainnya.";
+    }
+
+    private function resolveCategoryFromText(string $text): ?string
+    {
+        $value = trim($text);
+        if ($value === '') {
+            return null;
+        }
+
+        $fromMaster = EvidenceCategory::activeCode(strtoupper($value));
+        if ($fromMaster !== null) {
+            return $fromMaster;
+        }
+
+        $match = EvidenceCategory::active()
+            ->get()
+            ->first(fn (EvidenceCategory $category) => mb_strtolower($category->name) === mb_strtolower($value)
+                || mb_strtolower($category->code) === mb_strtolower($value));
+
+        if ($match !== null) {
+            return $match->code;
+        }
+
+        foreach (ItemCategory::cases() as $category) {
+            if (mb_strtolower($category->value) === mb_strtolower($value)
+                || mb_strtolower($category->label()) === mb_strtolower($value)) {
+                return $category->value;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -1652,10 +1730,18 @@ class TelegramBotService
      */
     private function categoryKeyboard(): array
     {
+        $categories = EvidenceCategory::active()->get();
+        if ($categories->isEmpty()) {
+            $categories = collect(ItemCategory::cases())->map(fn (ItemCategory $category) => (object) [
+                'name' => $category->label(),
+                'code' => $category->value,
+            ]);
+        }
+
         $row = [];
         $rows = [];
 
-        foreach (EvidenceCategory::active()->get() as $category) {
+        foreach ($categories as $category) {
             $row[] = ['text' => $category->name, 'callback_data' => 'cat_'.$category->code];
             if (count($row) === 2) {
                 $rows[] = $row;

@@ -16,6 +16,7 @@ use App\Http\Controllers\EvidenceCategoryController;
 use App\Http\Controllers\AssetTypeController;
 use App\Http\Controllers\StorageLocationController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\EvidenceItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -39,6 +40,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
 
         Route::resource('cases', LegalCaseController::class)->except(['destroy']);
+
+        Route::get('items', [EvidenceItemController::class, 'index'])->name('items.index');
+        Route::get('items/{item}', [EvidenceItemController::class, 'show'])->name('items.show');
+        Route::get('seals', [PhysicalUnitController::class, 'seals'])->name('seals.index');
 
         Route::get('units', [PhysicalUnitController::class, 'index'])->name('units.index');
         Route::get('units/{unit}', [PhysicalUnitController::class, 'show'])->name('units.show');

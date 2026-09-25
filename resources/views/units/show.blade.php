@@ -68,7 +68,9 @@
                     <tbody class="divide-y divide-navy-100">
                         @foreach ($unit->items as $item)
                             <tr>
-                                <td class="py-2">{{ $item->item_name }}</td>
+                                <td class="py-2">
+                                    <a class="font-semibold hover:text-gold-600" href="{{ route('items.show', $item) }}">{{ $item->item_name }}</a>
+                                </td>
                                 <td class="py-2">{{ $item->categoryLabel() }}</td>
                                 <td class="py-2">{{ $item->quantity }}</td>
                                 <td class="py-2">{{ $item->verdict_status->label() }}</td>
@@ -170,6 +172,8 @@
                 <button class="btn-primary w-full">Catat pengembalian</button>
             </form>
         @endif
+
+        @include('loans._history', ['loans' => $unit->loans])
 
         <div class="card">
             <h3 class="font-serif text-lg">Riwayat mutasi</h3>

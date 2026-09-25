@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ItemCategory;
 use App\Enums\VerdictStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -44,5 +45,28 @@ class UnitItem extends Model
     public function physicalUnit(): BelongsTo
     {
         return $this->belongsTo(PhysicalUnit::class, 'physical_unit_id');
+    }
+
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        if ($term === null || trim($term) === '') {
+            return $query;
+        }
+
+        $like = '%'.trim($term).'%';
+
+        return $query->where(function (Builder $builder) use ($like) {
+            $builder->where('item_name', 'like', $like)
+                ->orWhere('quantity', 'like', $like)
+                ->orWhere('category', 'like', $like)
+                ->orWhereHas('physicalUnit', function (Builder $unit) use ($like) {
+                    $unit->where('unit_code', 'like', $like)
+                        ->orWhere('storage_location', 'like', $like)
+                        ->orWhereHas('legalCase', function (Builder $case) use ($like) {
+                            $case->where('case_number', 'like', $like)
+                                ->orWhere('defendant_name', 'like', $like);
+                        });
+                });
+        });
     }
 }
