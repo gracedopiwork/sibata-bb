@@ -458,6 +458,14 @@ class TelegramBotService
             [$name, $qty] = $this->parseNameAndQty($text);
             $payload['item_name'] = $name;
             $payload['quantity'] = $qty;
+
+            if (($payload['edit_mode'] ?? false) === true) {
+                unset($payload['edit_mode']);
+                $this->showDraftReview($actor, $chatId, $payload);
+
+                return;
+            }
+
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_category', null, $payload);
             $this->reply($chatId, $this->categoryPrompt(), $this->categoryKeyboard());
 
@@ -473,6 +481,13 @@ class TelegramBotService
             }
 
             $payload['category'] = $category;
+            if (($payload['edit_mode'] ?? false) === true) {
+                unset($payload['edit_mode']);
+                $this->showDraftReview($actor, $chatId, $payload);
+
+                return;
+            }
+
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_location', null, $payload);
             $this->reply($chatId, 'Pilih <b>tempat penyimpanan</b>:', $this->locationKeyboard());
 
@@ -482,6 +497,12 @@ class TelegramBotService
         if ($conversation->step === 'awaiting_single_location') {
             if (! $this->applyTypedStorageLocation($payload, $text)) {
                 $this->reply($chatId, 'Pilih tempat penyimpanan dari tombol, atau ketik nama lokasi yang terdaftar.', $this->locationKeyboard());
+
+                return;
+            }
+
+            if (array_key_exists('photo_path', $payload)) {
+                $this->showDraftReview($actor, $chatId, $payload);
 
                 return;
             }
@@ -500,7 +521,8 @@ class TelegramBotService
                 return;
             }
 
-            $this->saveSingleFromPayload($actor, $chatId, $payload, $photoPath ?: null);
+            $payload['photo_path'] = $photoPath ?: null;
+            $this->showDraftReview($actor, $chatId, $payload);
 
             return;
         }
@@ -513,6 +535,12 @@ class TelegramBotService
             }
 
             $payload['pack_description'] = $text;
+            if (is_array($payload['children'] ?? null) || array_key_exists('photo_path', $payload)) {
+                $this->showDraftReview($actor, $chatId, $payload);
+
+                return;
+            }
+
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_location', null, $payload);
             $this->reply($chatId, 'Pilih <b>tempat penyimpanan</b>:', $this->locationKeyboard());
 
@@ -522,6 +550,12 @@ class TelegramBotService
         if ($conversation->step === 'awaiting_pack_location') {
             if (! $this->applyTypedStorageLocation($payload, $text)) {
                 $this->reply($chatId, 'Pilih tempat penyimpanan dari tombol, atau ketik nama lokasi yang terdaftar.', $this->locationKeyboard());
+
+                return;
+            }
+
+            if (array_key_exists('photo_path', $payload) || is_array($payload['children'] ?? null)) {
+                $this->showDraftReview($actor, $chatId, $payload);
 
                 return;
             }
@@ -540,14 +574,26 @@ class TelegramBotService
                 return;
             }
 
-            $this->createPackShell($actor, $chatId, $payload, $photoPath ?: null);
+            $alreadyDrafted = is_array($payload['children'] ?? null);
+            $payload['photo_path'] = $photoPath ?: null;
+
+            if ($alreadyDrafted) {
+                $this->showDraftReview($actor, $chatId, $payload);
+
+                return;
+            }
+
+            $payload['children'] = [];
+            $payload['child_index'] = 1;
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_name', null, $payload);
+            $this->reply($chatId, "Draft wadah siap. Belum disimpan.\n\n".$this->childNamePrompt(1));
 
             return;
         }
 
         if ($conversation->step === 'awaiting_child_name') {
-            if ($this->isSkipCommand($text)) {
-                $this->finishPackContents($actor, $chatId, $payload);
+            if ($this->isSkipCommand($text) && ! isset($payload['edit_index'])) {
+                $this->showDraftReview($actor, $chatId, $payload);
 
                 return;
             }
@@ -575,7 +621,25 @@ class TelegramBotService
                 return;
             }
 
-            $this->savePackChild($actor, $chatId, $payload, $category);
+            $this->storeDraftChild($actor, $chatId, $payload, $category);
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_review') {
+            $this->reply($chatId, 'Periksa dulu data di atas. Tekan <b>Setujui & Simpan</b> atau <b>Ubah</b>.');
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_edit_menu') {
+            $this->reply($chatId, 'Pilih bagian yang ingin diubah dari tombol, atau tekan <b>Kembali ke ringkasan</b>.');
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_pack_loop') {
+            $this->reply($chatId, 'Tekan <b>Tambah Barang Lain</b> atau <b>Selesai & Periksa</b>. Data belum disimpan.');
 
             return;
         }
@@ -630,20 +694,32 @@ class TelegramBotService
 
             if ($conversation->step === 'awaiting_single_category') {
                 $payload['category'] = $category;
+                if (($payload['edit_mode'] ?? false) === true) {
+                    unset($payload['edit_mode']);
+                    $this->showDraftReview($actor, $chatId, $payload);
+
+                    return;
+                }
+
                 $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_location', null, $payload);
                 $this->reply($chatId, 'Pilih <b>tempat penyimpanan</b>:', $this->locationKeyboard());
 
                 return;
             }
 
-            $this->savePackChild($actor, $chatId, $payload, $category);
+            $this->storeDraftChild($actor, $chatId, $payload, $category);
 
             return;
         }
 
         if ($data === 'add_more') {
             $this->telegram->answerCallbackQuery($callbackId);
-            unset($payload['item_name'], $payload['quantity'], $payload['category'], $payload['storage_location'], $payload['storage_location_id'], $payload['unit_id'], $payload['child_name'], $payload['child_qty'], $payload['pack_description']);
+            unset(
+                $payload['item_name'], $payload['quantity'], $payload['category'],
+                $payload['storage_location'], $payload['storage_location_id'], $payload['unit_id'],
+                $payload['child_name'], $payload['child_qty'], $payload['pack_description'],
+                $payload['children'], $payload['photo_path'], $payload['child_index'], $payload['edit_index'], $payload['edit_mode']
+            );
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_type', null, $payload);
             $this->reply($chatId, 'Pilih jenis unit berikutnya:', $this->typeKeyboard());
 
@@ -660,9 +736,9 @@ class TelegramBotService
 
         if ($data === 'pack_more') {
             $this->telegram->answerCallbackQuery($callbackId);
-            $index = ((int) ($payload['child_index'] ?? 1)) + 1;
+            $index = count($payload['children'] ?? []) + 1;
             $payload['child_index'] = $index;
-            unset($payload['child_name'], $payload['child_qty']);
+            unset($payload['child_name'], $payload['child_qty'], $payload['edit_index']);
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_name', null, $payload);
             $this->reply($chatId, $this->childNamePrompt($index));
 
@@ -670,23 +746,90 @@ class TelegramBotService
         }
 
         if ($data === 'pack_done') {
-            $unit = PhysicalUnit::query()->with(['legalCase', 'items'])->find((int) ($payload['unit_id'] ?? 0));
             $this->telegram->answerCallbackQuery($callbackId);
+            $this->showDraftReview($actor, $chatId, $payload);
 
-            if ($unit === null) {
-                $this->reply($chatId, 'Paket tidak ditemukan. Mulai ulang /tambah.');
+            return;
+        }
 
-                return;
-            }
+        if ($data === 'draft_save' && $conversation->step === 'awaiting_review') {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->persistDraft($actor, $chatId, $payload);
 
-            $this->sendUnitSummary($chatId, $unit, $actor);
-            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_more', null, $payload);
-            $this->reply($chatId, 'Paket selesai. Tambah unit lain untuk perkara yang sama?', [
-                [
-                    ['text' => '+ Tambah Lagi', 'callback_data' => 'add_more'],
-                    ['text' => 'Selesai', 'callback_data' => 'add_done'],
-                ],
-            ]);
+            return;
+        }
+
+        if ($data === 'draft_edit' && $conversation->step === 'awaiting_review') {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->showDraftEditMenu($actor, $chatId, $payload);
+
+            return;
+        }
+
+        if ($data === 'draft_back') {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->showDraftReview($actor, $chatId, $payload);
+
+            return;
+        }
+
+        if ($data === 'edit_name') {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $payload['edit_mode'] = true;
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_desc', null, $payload);
+            $this->reply($chatId, 'Kirim nama/deskripsi BB yang baru.');
+
+            return;
+        }
+
+        if ($data === 'edit_cat') {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $payload['edit_mode'] = true;
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_category', null, $payload);
+            $this->reply($chatId, $this->categoryPrompt(), $this->categoryKeyboard());
+
+            return;
+        }
+
+        if ($data === 'edit_desc') {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_meta', null, $payload);
+            $this->reply($chatId, 'Kirim deskripsi wadah/segel yang baru.');
+
+            return;
+        }
+
+        if ($data === 'edit_loc') {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', $payload['unit_type'] === UnitType::Pack->value ? 'awaiting_pack_location' : 'awaiting_single_location', null, $payload);
+            $this->reply($chatId, 'Pilih tempat penyimpanan yang baru:', $this->locationKeyboard());
+
+            return;
+        }
+
+        if ($data === 'edit_photo') {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', $payload['unit_type'] === UnitType::Pack->value ? 'awaiting_pack_photo' : 'awaiting_single_photo', null, $payload);
+            $this->reply($chatId, 'Kirim foto yang baru, atau ketik /skip.');
+
+            return;
+        }
+
+        if (preg_match('/^edc_(\d+)$/', $data, $edit) === 1) {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $payload['edit_index'] = (int) $edit[1];
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_name', null, $payload);
+            $this->reply($chatId, 'Kirim nama barang yang baru untuk item ke-'.((int) $edit[1] + 1).'.');
+
+            return;
+        }
+
+        if (preg_match('/^del_(\d+)$/', $data, $delete) === 1) {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $children = $payload['children'] ?? [];
+            unset($children[(int) $delete[1]]);
+            $payload['children'] = array_values($children);
+            $this->showDraftReview($actor, $chatId, $payload);
 
             return;
         }
@@ -703,6 +846,12 @@ class TelegramBotService
             $payload['storage_location'] = $location->name;
             $payload['storage_location_id'] = $location->id;
 
+            if (array_key_exists('photo_path', $payload) || is_array($payload['children'] ?? null)) {
+                $this->showDraftReview($actor, $chatId, $payload);
+
+                return;
+            }
+
             if ($conversation->step === 'awaiting_single_location') {
                 $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_photo', null, $payload);
                 $this->reply($chatId, 'Kirim <b>foto BB</b> lewat kamera Telegram, atau ketik <code>/skip</code> jika tanpa foto.');
@@ -717,6 +866,113 @@ class TelegramBotService
         }
 
         $this->telegram->answerCallbackQuery($callbackId);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function showDraftReview(TelegramWhitelist $actor, int|string $chatId, array $payload): void
+    {
+        unset($payload['edit_mode'], $payload['edit_index'], $payload['child_name'], $payload['child_qty']);
+        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_review', null, $payload);
+        $this->reply($chatId, $this->draftSummary($payload), [
+            [
+                ['text' => '✅ Setujui & Simpan', 'callback_data' => 'draft_save'],
+                ['text' => '✏️ Ubah', 'callback_data' => 'draft_edit'],
+            ],
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function draftSummary(array $payload): string
+    {
+        $lines = [
+            '📋 <b>Periksa data sebelum disimpan</b>',
+            'Data ini masih draf. Tekan <b>Setujui & Simpan</b> jika sudah benar, atau <b>Ubah</b> jika ada yang salah.',
+            '',
+        ];
+
+        if (($payload['unit_type'] ?? '') === UnitType::Pack->value) {
+            $lines[] = 'Jenis: <b>Segel / paket</b>';
+            $lines[] = 'Wadah: '.$this->e((string) ($payload['pack_description'] ?? '-'));
+            $lines[] = 'Lokasi: '.$this->e((string) ($payload['storage_location'] ?? '-'));
+            $lines[] = 'Foto: '.(filled($payload['photo_path'] ?? null) ? 'ada' : 'tidak ada');
+            $lines[] = '';
+            $children = $payload['children'] ?? [];
+            if ($children === []) {
+                $lines[] = 'Isi paket: <i>belum ada barang</i>';
+            } else {
+                $lines[] = '<b>Isi paket</b>';
+                foreach ($children as $index => $child) {
+                    $jenis = EvidenceCategory::labelFor((string) ($child['category'] ?? ''));
+                    $lines[] = ($index + 1).'. '.$this->e((string) ($child['item_name'] ?? '-'))
+                        .' — '.$this->e($jenis)
+                        .' ('.$this->e((string) ($child['quantity'] ?? '1')).')';
+                }
+            }
+        } else {
+            $lines[] = 'Jenis: <b>BB satuan</b>';
+            $lines[] = 'Nama: '.$this->e((string) ($payload['item_name'] ?? '-'));
+            $lines[] = 'Jenis BB: '.$this->e(EvidenceCategory::labelFor((string) ($payload['category'] ?? '')));
+            $lines[] = 'Jumlah: '.$this->e((string) ($payload['quantity'] ?? '1 unit'));
+            $lines[] = 'Lokasi: '.$this->e((string) ($payload['storage_location'] ?? '-'));
+            $lines[] = 'Foto: '.(filled($payload['photo_path'] ?? null) ? 'ada' : 'tidak ada');
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function showDraftEditMenu(TelegramWhitelist $actor, int|string $chatId, array $payload): void
+    {
+        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_edit_menu', null, $payload);
+        $rows = [];
+
+        if (($payload['unit_type'] ?? '') === UnitType::Pack->value) {
+            $rows[] = [['text' => 'Ubah deskripsi wadah', 'callback_data' => 'edit_desc']];
+            $rows[] = [
+                ['text' => 'Ubah lokasi', 'callback_data' => 'edit_loc'],
+                ['text' => 'Ubah foto', 'callback_data' => 'edit_photo'],
+            ];
+
+            foreach ($payload['children'] ?? [] as $index => $child) {
+                $label = mb_strimwidth((string) ($child['item_name'] ?? 'barang'), 0, 28, '…');
+                $rows[] = [
+                    ['text' => '✏️ '.($index + 1).'. '.$label, 'callback_data' => 'edc_'.$index],
+                    ['text' => '🗑 Hapus', 'callback_data' => 'del_'.$index],
+                ];
+            }
+
+            $rows[] = [['text' => '+ Tambah barang', 'callback_data' => 'pack_more']];
+        } else {
+            $rows[] = [['text' => 'Ubah nama/deskripsi', 'callback_data' => 'edit_name']];
+            $rows[] = [['text' => 'Ubah jenis BB', 'callback_data' => 'edit_cat']];
+            $rows[] = [
+                ['text' => 'Ubah lokasi', 'callback_data' => 'edit_loc'],
+                ['text' => 'Ubah foto', 'callback_data' => 'edit_photo'],
+            ];
+        }
+
+        $rows[] = [['text' => '⬅️ Kembali ke ringkasan', 'callback_data' => 'draft_back']];
+        $this->reply($chatId, 'Pilih bagian yang ingin diubah:', $rows);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function persistDraft(TelegramWhitelist $actor, int|string $chatId, array $payload): void
+    {
+        if (($payload['unit_type'] ?? '') === UnitType::Pack->value) {
+            $this->persistDraftPack($actor, $chatId, $payload);
+
+            return;
+        }
+
+        $this->saveSingleFromPayload($actor, $chatId, $payload, $payload['photo_path'] ?? null);
     }
 
     /**
@@ -748,19 +1004,13 @@ class TelegramBotService
 
         $this->sendUnitSummary($chatId, $unit, $actor);
         $payload['unit_id'] = $unit->id;
-        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_more', null, $payload);
-        $this->reply($chatId, 'Tambah unit lain untuk perkara yang sama?', [
-            [
-                ['text' => '+ Tambah Lagi', 'callback_data' => 'add_more'],
-                ['text' => 'Selesai', 'callback_data' => 'add_done'],
-            ],
-        ]);
+        $this->askMoreAfterSave($actor, $chatId, $payload);
     }
 
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function createPackShell(TelegramWhitelist $actor, int|string $chatId, array $payload, ?string $photoPath): void
+    private function persistDraftPack(TelegramWhitelist $actor, int|string $chatId, array $payload): void
     {
         $case = LegalCase::query()->find((int) ($payload['case_id'] ?? 0));
 
@@ -771,38 +1021,33 @@ class TelegramBotService
             return;
         }
 
+        $children = array_values(array_filter(
+            $payload['children'] ?? [],
+            fn ($child) => filled($child['item_name'] ?? null) && filled($child['category'] ?? null),
+        ));
+
         $unit = $this->warehouse->createPackUnit(
             $case,
             (string) $payload['storage_location'],
-            $photoPath,
+            filled($payload['photo_path'] ?? null) ? (string) $payload['photo_path'] : null,
             $actor->user_name,
-            [],
+            $children,
             isset($payload['asset_type_id']) ? (int) $payload['asset_type_id'] : null,
             isset($payload['storage_location_id']) ? (int) $payload['storage_location_id'] : null,
         );
 
+        $this->sendUnitSummary($chatId, $unit, $actor);
         $payload['unit_id'] = $unit->id;
-        $payload['child_index'] = 1;
-        $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_child_name', null, $payload);
-        $this->reply(
-            $chatId,
-            "✅ Wadah <code>{$this->e($unit->unit_code)}</code> tercatat.\n\n".$this->childNamePrompt(1)
-        );
+        $this->askMoreAfterSave($actor, $chatId, $payload);
     }
 
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function finishPackContents(TelegramWhitelist $actor, int|string $chatId, array $payload): void
+    private function askMoreAfterSave(TelegramWhitelist $actor, int|string $chatId, array $payload): void
     {
-        $unit = PhysicalUnit::query()->with(['legalCase', 'items'])->find((int) ($payload['unit_id'] ?? 0));
-
-        if ($unit !== null) {
-            $this->sendUnitSummary($chatId, $unit, $actor);
-        }
-
         $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_more', null, $payload);
-        $this->reply($chatId, 'Paket tersimpan. Rincian isi bisa ditambah nanti di portal. Tambah unit lain?', [
+        $this->reply($chatId, 'Data sudah disimpan. Tambah unit lain untuk perkara yang sama?', [
             [
                 ['text' => '+ Tambah Lagi', 'callback_data' => 'add_more'],
                 ['text' => 'Selesai', 'callback_data' => 'add_done'],
@@ -856,30 +1101,40 @@ class TelegramBotService
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function savePackChild(TelegramWhitelist $actor, int|string $chatId, array $payload, string $category): void
+    private function storeDraftChild(TelegramWhitelist $actor, int|string $chatId, array $payload, string $category): void
     {
-        $unit = PhysicalUnit::query()->find((int) ($payload['unit_id'] ?? 0));
+        $child = [
+            'item_name' => (string) ($payload['child_name'] ?? ''),
+            'category' => $category,
+            'quantity' => (string) ($payload['child_qty'] ?? '1'),
+        ];
 
-        if ($unit === null) {
-            $this->clearConversation((int) $actor->telegram_chat_id);
-            $this->reply($chatId, 'Paket tidak ditemukan. Mulai ulang /tambah.');
+        $children = $payload['children'] ?? [];
+        if (isset($payload['edit_index'])) {
+            $editIndex = (int) $payload['edit_index'];
+            if (isset($children[$editIndex])) {
+                $children[$editIndex] = $child;
+            } else {
+                $children[] = $child;
+            }
+            $payload['children'] = array_values($children);
+            unset($payload['edit_index'], $payload['child_name'], $payload['child_qty']);
+            $this->showDraftReview($actor, $chatId, $payload);
 
             return;
         }
 
-        $this->warehouse->addPackChild(
-            $unit,
-            (string) $payload['child_name'],
-            $category,
-            (string) ($payload['child_qty'] ?? '1'),
-        );
+        $children[] = $child;
+        $payload['children'] = $children;
+        $payload['child_index'] = count($children);
+        unset($payload['child_name'], $payload['child_qty']);
 
         $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_loop', null, $payload);
         $jenis = EvidenceCategory::labelFor($category);
-        $this->reply($chatId, "✅ <b>{$this->e((string) $payload['child_name'])}</b> tercatat sebagai <b>{$this->e($jenis)}</b>.\nTambah barang berikutnya?", [
+        $this->reply($chatId, "Draft: <b>{$this->e((string) $child['item_name'])}</b> sebagai <b>{$this->e($jenis)}</b>.\nBelum disimpan. Tambah barang berikutnya?", [
             [
                 ['text' => '+ Tambah Barang Lain', 'callback_data' => 'pack_more'],
-                ['text' => 'Selesai Paket Ini', 'callback_data' => 'pack_done'],
+                ['text' => 'Selesai & Periksa', 'callback_data' => 'pack_done'],
             ],
         ]);
     }
