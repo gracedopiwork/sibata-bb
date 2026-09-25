@@ -7,6 +7,7 @@ use App\Enums\UnitType;
 use App\Http\Requests\StoreLegalCaseRequest;
 use App\Http\Requests\UpdateLegalCaseRequest;
 use App\Models\AssetType;
+use App\Models\StorageLocation;
 use App\Models\CaseType;
 use App\Models\EvidenceCategory;
 use App\Models\LegalCase;
@@ -44,6 +45,7 @@ class LegalCaseController extends Controller
             'assetTypes' => AssetType::active()->get(),
             'prosecutors' => Prosecutor::active()->get(),
             'caseTypes' => CaseType::active()->get(),
+            'storageLocations' => StorageLocation::active()->get(),
         ]);
     }
 
@@ -80,6 +82,9 @@ class LegalCaseController extends Controller
             }
 
             $type = UnitType::from($unitInput['type']);
+            $location = StorageLocation::query()->find((int) $unitInput['storage_location_id']);
+            $locationName = $location?->name ?? '';
+            $locationId = $location?->id;
 
             if ($type === UnitType::Single) {
                 $unit = $this->warehouse->createSingleUnit(
@@ -87,10 +92,11 @@ class LegalCaseController extends Controller
                     $unitInput['item_name'],
                     (string) $unitInput['category'],
                     $unitInput['quantity'] ?? '1',
-                    $unitInput['storage_location'],
+                    $locationName,
                     $photoPath,
                     $handler,
                     isset($unitInput['asset_type_id']) ? (int) $unitInput['asset_type_id'] : null,
+                    $locationId,
                 );
             } else {
                 $children = collect($unitInput['children'] ?? [])
@@ -104,11 +110,12 @@ class LegalCaseController extends Controller
 
                 $unit = $this->warehouse->createPackUnit(
                     $case,
-                    $unitInput['storage_location'],
+                    $locationName,
                     $photoPath,
                     $handler,
                     $children,
                     isset($unitInput['asset_type_id']) ? (int) $unitInput['asset_type_id'] : null,
+                    $locationId,
                 );
             }
 

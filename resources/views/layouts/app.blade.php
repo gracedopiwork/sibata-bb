@@ -32,6 +32,7 @@
                 <a href="{{ route('case-types.index') }}" class="nav-link {{ request()->routeIs('case-types.*') ? 'nav-link-active' : '' }}">Jenis Perkara</a>
                 <a href="{{ route('asset-types.index') }}" class="nav-link {{ request()->routeIs('asset-types.*') ? 'nav-link-active' : '' }}">Jenis Aset</a>
                 <a href="{{ route('evidence-categories.index') }}" class="nav-link {{ request()->routeIs('evidence-categories.*') ? 'nav-link-active' : '' }}">Jenis BB</a>
+                <a href="{{ route('storage-locations.index') }}" class="nav-link {{ request()->routeIs('storage-locations.*') ? 'nav-link-active' : '' }}">Tempat Penyimpanan</a>
                 <a href="{{ route('units.index') }}" class="nav-link {{ request()->routeIs('units.*') ? 'nav-link-active' : '' }}">Inventaris Fisik</a>
                 <a href="{{ route('print-labels.index') }}" class="nav-link {{ request()->routeIs('print-labels.*') ? 'nav-link-active' : '' }}">Antrean Cetak Label</a>
                 <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'nav-link-active' : '' }}">Laporan / Ekspor</a>

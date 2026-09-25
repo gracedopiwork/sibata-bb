@@ -90,8 +90,12 @@
                     </select>
                 </div>
                 <div>
-                    <label class="label">Lokasi gudang</label>
-                    <input class="field" :name="'units['+index+'][storage_location]'" x-model="unit.storage_location" placeholder="Brankas PB3R Laci 02" required>
+                    <label class="label">Tempat penyimpanan</label>
+                    <select class="field" :name="'units['+index+'][storage_location_id]'" x-model="unit.storage_location_id" required>
+                        @foreach ($storageLocations as $location)
+                            <option value="{{ $location->id }}">{{ $location->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div>
                     <label class="label">Foto unit</label>
@@ -142,6 +146,7 @@ function caseForm() {
     const nextKey = () => Date.now() + Math.random();
     const defaultCategory = @json($categories->first()?->code ?? 'NARKOTIKA');
     const defaultAssetType = @json($assetTypes->first()?->id);
+    const defaultStorageLocation = @json($storageLocations->first()?->id);
     const child = () => ({ key: nextKey(), item_name: '', category: defaultCategory, quantity: '1' });
     return {
         units: [{
@@ -151,19 +156,21 @@ function caseForm() {
             category: defaultCategory,
             asset_type_id: defaultAssetType,
             quantity: '1 unit',
-            storage_location: '',
+            storage_location_id: defaultStorageLocation,
             children: [],
         }],
         addSingle() {
             this.units.push({
                 key: nextKey(), type: 'SINGLE', item_name: '', category: defaultCategory,
-                asset_type_id: defaultAssetType, quantity: '1 unit', storage_location: '', children: [],
+                asset_type_id: defaultAssetType, quantity: '1 unit',
+                storage_location_id: defaultStorageLocation, children: [],
             });
         },
         addPack() {
             this.units.push({
                 key: nextKey(), type: 'PACK', item_name: '', category: defaultCategory,
-                asset_type_id: defaultAssetType, quantity: '', storage_location: '', children: [child()],
+                asset_type_id: defaultAssetType, quantity: '',
+                storage_location_id: defaultStorageLocation, children: [child()],
             });
         },
         removeUnit(index) {

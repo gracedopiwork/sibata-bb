@@ -24,16 +24,18 @@ class WarehouseService
         ?string $photoPath,
         string $handledBy,
         ?int $assetTypeId = null,
+        ?int $storageLocationId = null,
     ): PhysicalUnit {
         $categoryCode = $category instanceof ItemCategory ? $category->value : $category;
 
-        return DB::transaction(function () use ($case, $itemName, $categoryCode, $quantity, $storageLocation, $photoPath, $handledBy, $assetTypeId) {
+        return DB::transaction(function () use ($case, $itemName, $categoryCode, $quantity, $storageLocation, $photoPath, $handledBy, $assetTypeId, $storageLocationId) {
             $unit = PhysicalUnit::query()->create([
                 'case_id' => $case->id,
                 'unit_code' => PhysicalUnit::nextUnitCode(UnitType::Single),
                 'unit_type' => UnitType::Single,
                 'asset_type_id' => $assetTypeId,
                 'storage_location' => $storageLocation,
+                'storage_location_id' => $storageLocationId,
                 'photo_path' => $photoPath,
                 'current_status' => UnitStatus::TersimpanGudang,
             ]);
@@ -58,14 +60,16 @@ class WarehouseService
         string $handledBy,
         array $children,
         ?int $assetTypeId = null,
+        ?int $storageLocationId = null,
     ): PhysicalUnit {
-        return DB::transaction(function () use ($case, $storageLocation, $photoPath, $handledBy, $children, $assetTypeId) {
+        return DB::transaction(function () use ($case, $storageLocation, $photoPath, $handledBy, $children, $assetTypeId, $storageLocationId) {
             $unit = PhysicalUnit::query()->create([
                 'case_id' => $case->id,
                 'unit_code' => PhysicalUnit::nextUnitCode(UnitType::Pack),
                 'unit_type' => UnitType::Pack,
                 'asset_type_id' => $assetTypeId,
                 'storage_location' => $storageLocation,
+                'storage_location_id' => $storageLocationId,
                 'photo_path' => $photoPath,
                 'current_status' => UnitStatus::TersimpanGudang,
             ]);
@@ -113,16 +117,17 @@ class WarehouseService
         });
     }
 
-    public function returnToWarehouse(PhysicalUnit $unit, string $storageLocation, string $handledBy, ?string $notes = null): Mutation
+    public function returnToWarehouse(PhysicalUnit $unit, string $storageLocation, string $handledBy, ?string $notes = null, ?int $storageLocationId = null): Mutation
     {
         if ($unit->current_status !== UnitStatus::DipinjamSidang) {
             throw new \RuntimeException('Unit tidak sedang dipinjam sidang.');
         }
 
-        return DB::transaction(function () use ($unit, $storageLocation, $handledBy, $notes) {
+        return DB::transaction(function () use ($unit, $storageLocation, $handledBy, $notes, $storageLocationId) {
             $unit->update([
                 'current_status' => UnitStatus::TersimpanGudang,
                 'storage_location' => $storageLocation,
+                'storage_location_id' => $storageLocationId,
             ]);
 
             return $this->mutate($unit, MutationType::KembaliGudang, $handledBy, $notes);

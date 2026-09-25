@@ -18,6 +18,7 @@ class PhysicalUnit extends Model
         'unit_type',
         'asset_type_id',
         'storage_location',
+        'storage_location_id',
         'photo_path',
         'current_status',
         'is_printed',
@@ -40,6 +41,11 @@ class PhysicalUnit extends Model
     public function assetType(): BelongsTo
     {
         return $this->belongsTo(AssetType::class);
+    }
+
+    public function storageLocation(): BelongsTo
+    {
+        return $this->belongsTo(StorageLocation::class);
     }
 
     public function items(): HasMany

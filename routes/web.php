@@ -14,6 +14,7 @@ use App\Http\Controllers\ProsecutorController;
 use App\Http\Controllers\CaseTypeController;
 use App\Http\Controllers\EvidenceCategoryController;
 use App\Http\Controllers\AssetTypeController;
+use App\Http\Controllers\StorageLocationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -58,6 +59,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::resource('case-types', CaseTypeController::class)->except(['show', 'create']);
         Route::resource('evidence-categories', EvidenceCategoryController::class)->except(['show', 'create']);
         Route::resource('asset-types', AssetTypeController::class)->except(['show', 'create']);
+        Route::resource('storage-locations', StorageLocationController::class)->except(['show', 'create']);
         Route::post('users/{user}/license/regenerate', [UserController::class, 'regenerateLicense'])->name('users.license.regenerate');
         Route::post('users/{user}/license/revoke', [UserController::class, 'revokeLicense'])->name('users.license.revoke');
         Route::post('users/{user}/license/restore', [UserController::class, 'restoreLicense'])->name('users.license.restore');

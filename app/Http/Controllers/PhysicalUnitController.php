@@ -7,6 +7,7 @@ use App\Enums\UnitType;
 use App\Enums\VerdictStatus;
 use App\Models\EvidenceCategory;
 use App\Models\PhysicalUnit;
+use App\Models\StorageLocation;
 use App\Models\UnitItem;
 use App\Services\WarehouseService;
 use Illuminate\Http\RedirectResponse;
@@ -38,7 +39,7 @@ class PhysicalUnitController extends Controller
 
     public function show(PhysicalUnit $unit): View
     {
-        $unit->load(['legalCase', 'items', 'mutations', 'assetType']);
+        $unit->load(['legalCase', 'items', 'mutations', 'assetType', 'storageLocation']);
 
         return view('units.show', [
             'unit' => $unit,
@@ -47,6 +48,7 @@ class PhysicalUnitController extends Controller
                 fn (VerdictStatus $status) => $status->isFinal()
             )),
             'categories' => EvidenceCategory::active()->get(),
+            'storageLocations' => StorageLocation::active()->get(),
         ]);
     }
 
@@ -76,19 +78,22 @@ class PhysicalUnitController extends Controller
     public function returnToWarehouse(Request $request, PhysicalUnit $unit): RedirectResponse
     {
         $data = $request->validate([
-            'storage_location' => ['required', 'string', 'max:255'],
+            'storage_location_id' => ['required', 'exists:storage_locations,id'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        $location = StorageLocation::query()->findOrFail((int) $data['storage_location_id']);
 
         try {
             $this->warehouse->returnToWarehouse(
                 $unit,
-                $data['storage_location'],
+                $location->name,
                 $request->user()?->name ?? 'Web PB3R',
                 $data['notes'] ?? null,
+                $location->id,
             );
         } catch (RuntimeException $exception) {
-            return back()->withErrors(['storage_location' => $exception->getMessage()]);
+            return back()->withErrors(['storage_location_id' => $exception->getMessage()]);
         }
 
         return back()->with('status', 'Unit dikembalikan ke gudang.');

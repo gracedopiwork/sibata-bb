@@ -7,6 +7,7 @@ use App\Models\AssetType;
 use App\Models\CaseType;
 use App\Models\PhysicalUnit;
 use App\Models\Prosecutor;
+use App\Models\StorageLocation;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -36,6 +37,7 @@ class SitabaSmokeTest extends TestCase
         $this->actingAs($admin)->get('/case-types')->assertOk()->assertSee('Jenis Perkara');
         $this->actingAs($admin)->get('/asset-types')->assertOk()->assertSee('Jenis Aset');
         $this->actingAs($admin)->get('/evidence-categories')->assertOk()->assertSee('Jenis BB');
+        $this->actingAs($admin)->get('/storage-locations')->assertOk()->assertSee('Tempat Penyimpanan');
         $this->actingAs($admin)->get('/whitelist')->assertOk();
         $this->actingAs($admin)->get('/bot')->assertOk()->assertSee('BotFather');
     }
@@ -167,12 +169,12 @@ class SitabaSmokeTest extends TestCase
                     'item_name' => '1 unit parang gagang kayu '.$caseNumber,
                     'category' => 'SENJATA',
                     'quantity' => '1 unit',
-                    'storage_location' => 'Lemari Senjata '.$caseNumber,
+                    'storage_location_id' => StorageLocation::query()->where('code', 'LEMARI_SENJATA')->value('id'),
                 ],
                 [
                     'type' => 'PACK',
                     'asset_type_id' => AssetType::query()->where('code', 'BERGERAK')->value('id'),
-                    'storage_location' => 'Brankas PB3R Laci 09',
+                    'storage_location_id' => StorageLocation::query()->where('code', 'BRANKAS_02')->value('id'),
                     'children' => [
                         [
                             'item_name' => '1 sachet sabu 0,3 gram '.$caseNumber,
@@ -191,7 +193,10 @@ class SitabaSmokeTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseHas('cases', ['case_number' => $caseNumber]);
-        $this->assertDatabaseHas('physical_units', ['storage_location' => 'Lemari Senjata '.$caseNumber]);
+        $this->assertDatabaseHas('physical_units', [
+            'storage_location' => 'Lemari Senjata',
+            'storage_location_id' => StorageLocation::query()->where('code', 'LEMARI_SENJATA')->value('id'),
+        ]);
         $this->assertDatabaseHas('sip_evidence_items', ['item_name' => '1 sachet sabu 0,3 gram '.$caseNumber]);
     }
 
@@ -212,7 +217,7 @@ class SitabaSmokeTest extends TestCase
         ]);
 
         $this->actingAs($admin)->post(route('units.return', $unit), [
-            'storage_location' => $unit->storage_location,
+            'storage_location_id' => $unit->storage_location_id ?? StorageLocation::query()->firstOrFail()->id,
             'notes' => 'Kondisi baik',
         ])->assertRedirect();
 

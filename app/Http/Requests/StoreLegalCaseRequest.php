@@ -28,7 +28,7 @@ class StoreLegalCaseRequest extends FormRequest
             'units' => ['required', 'array', 'min:1'],
             'units.*.type' => ['required', Rule::enum(UnitType::class)],
             'units.*.asset_type_id' => ['required', 'exists:asset_types,id'],
-            'units.*.storage_location' => ['required', 'string', 'max:255'],
+            'units.*.storage_location_id' => ['required', 'exists:storage_locations,id'],
             'units.*.photo' => ['nullable', 'image', 'max:8192'],
             'units.*.item_name' => ['required_if:units.*.type,SINGLE', 'nullable', 'string', 'max:255'],
             'units.*.category' => ['required_if:units.*.type,SINGLE', 'nullable', 'exists:evidence_categories,code'],
@@ -52,6 +52,7 @@ class StoreLegalCaseRequest extends FormRequest
             'case_type_id' => 'jenis perkara',
             'units' => 'unit fisik',
             'units.*.asset_type_id' => 'jenis aset',
+            'units.*.storage_location_id' => 'tempat penyimpanan',
         ];
     }
 }

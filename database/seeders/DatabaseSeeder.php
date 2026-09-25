@@ -6,6 +6,7 @@ use App\Enums\ItemCategory;
 use App\Enums\TelegramAccessRole;
 use App\Enums\UserRole;
 use App\Models\LegalCase;
+use App\Models\StorageLocation;
 use App\Models\TelegramWhitelist;
 use App\Models\User;
 use App\Services\WarehouseService;
@@ -54,6 +55,18 @@ class DatabaseSeeder extends Seeder
         }
 
         $warehouse = app(WarehouseService::class);
+        $parkiran = StorageLocation::query()->firstOrCreate(
+            ['code' => 'PARKIRAN_BB'],
+            ['name' => 'Parkiran BB', 'is_active' => true],
+        );
+        $brankas = StorageLocation::query()->firstOrCreate(
+            ['code' => 'BRANKAS_02'],
+            ['name' => 'Brankas PB3R Laci 02', 'is_active' => true],
+        );
+        $lemari = StorageLocation::query()->firstOrCreate(
+            ['code' => 'LEMARI_A01'],
+            ['name' => 'Lemari Besi A-01', 'is_active' => true],
+        );
 
         $narkotika = LegalCase::query()->create([
             'case_number' => 'REG-012/PID.SUS/2026',
@@ -66,14 +79,16 @@ class DatabaseSeeder extends Seeder
             '1 unit sepeda motor Honda Beat warna hitam, nopol DP 3456 XY',
             ItemCategory::Kendaraan,
             '1 unit',
-            'Parkiran BB No. 04',
+            $parkiran->name,
             null,
             'Admin PB3R',
+            null,
+            $parkiran->id,
         );
 
         $warehouse->createPackUnit(
             $narkotika,
-            'Brankas PB3R Laci 02',
+            $brankas->name,
             null,
             'Admin PB3R',
             [
@@ -81,6 +96,8 @@ class DatabaseSeeder extends Seeder
                 ['item_name' => '1 unit timbangan digital', 'category' => ItemCategory::Elektronik, 'quantity' => '1 unit'],
                 ['item_name' => 'HP Vivo Y21', 'category' => ItemCategory::Elektronik, 'quantity' => '1 unit'],
             ],
+            null,
+            $brankas->id,
         );
 
         $tipikor = LegalCase::query()->create([
@@ -94,9 +111,11 @@ class DatabaseSeeder extends Seeder
             '1 unit laptop ASUS VivoBook beserta charger',
             ItemCategory::Elektronik,
             '1 unit',
-            'Lemari Besi A-02',
+            $lemari->name,
             null,
             'Admin PB3R',
+            null,
+            $lemari->id,
         );
     }
 }

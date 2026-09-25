@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EvidenceCategory;
+use App\Models\StorageLocation;
 use App\Enums\TelegramAccessRole;
 use App\Enums\UnitStatus;
 use App\Enums\UnitType;
@@ -298,6 +299,12 @@ class TelegramBotService
             return;
         }
 
+        if ($conversation !== null && $conversation->action === 'kembali') {
+            $this->handleKembaliCallback($actor, $chatId, $callbackId, $conversation, $data);
+
+            return;
+        }
+
         $this->telegram->answerCallbackQuery($callbackId);
     }
 
@@ -456,13 +463,12 @@ class TelegramBotService
         }
 
         if ($conversation->step === 'awaiting_single_location') {
-            if ($text === '') {
-                $this->reply($chatId, 'Kirim lokasi gudang (contoh: Brankas PB3R Laci 02).');
+            if (! $this->applyTypedStorageLocation($payload, $text)) {
+                $this->reply($chatId, 'Pilih tempat penyimpanan dari tombol, atau ketik nama lokasi yang terdaftar.', $this->locationKeyboard());
 
                 return;
             }
 
-            $payload['storage_location'] = $text;
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_photo', null, $payload);
             $this->reply($chatId, 'Kirim <b>foto BB</b> lewat kamera Telegram, atau ketik <code>/skip</code> jika tanpa foto.');
 
@@ -484,19 +490,25 @@ class TelegramBotService
 
         if ($conversation->step === 'awaiting_pack_meta') {
             if ($text === '') {
-                $this->reply($chatId, 'Kirim deskripsi wadah dan lokasi, dipisah | atau baris baru.');
+                $this->reply($chatId, 'Kirim deskripsi wadah/segel.');
 
                 return;
             }
 
-            [$desc, $location] = $this->parseTwoNames($text);
-            if ($location === '') {
-                $location = $desc;
-                $desc = 'Paket/wadah tersegel';
+            $payload['pack_description'] = $text;
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_location', null, $payload);
+            $this->reply($chatId, 'Pilih <b>tempat penyimpanan</b>:', $this->locationKeyboard());
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_pack_location') {
+            if (! $this->applyTypedStorageLocation($payload, $text)) {
+                $this->reply($chatId, 'Pilih tempat penyimpanan dari tombol, atau ketik nama lokasi yang terdaftar.', $this->locationKeyboard());
+
+                return;
             }
 
-            $payload['pack_description'] = $desc;
-            $payload['storage_location'] = $location;
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_photo', null, $payload);
             $this->reply($chatId, 'Kirim <b>foto wadah/segel</b>, atau ketik <code>/skip</code>.');
 
@@ -565,10 +577,7 @@ class TelegramBotService
             $this->telegram->answerCallbackQuery($callbackId);
             $payload['unit_type'] = UnitType::Pack->value;
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_meta', null, $payload);
-            $this->reply(
-                $chatId,
-                "Kirim deskripsi wadah dan lokasi gudang.\nContoh:\nKantong plastik segel\nBrankas PB3R Laci 02"
-            );
+            $this->reply($chatId, "Kirim deskripsi wadah/segel.\nContoh: <code>Kantong plastik segel</code>");
 
             return;
         }
@@ -586,7 +595,7 @@ class TelegramBotService
             if ($conversation->step === 'awaiting_single_category') {
                 $payload['category'] = $category;
                 $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_location', null, $payload);
-                $this->reply($chatId, 'Kirim <b>lokasi gudang</b> (contoh: Parkiran BB No. 04).');
+                $this->reply($chatId, 'Pilih <b>tempat penyimpanan</b>:', $this->locationKeyboard());
 
                 return;
             }
@@ -598,7 +607,7 @@ class TelegramBotService
 
         if ($data === 'add_more') {
             $this->telegram->answerCallbackQuery($callbackId);
-            unset($payload['item_name'], $payload['quantity'], $payload['category'], $payload['storage_location'], $payload['unit_id'], $payload['child_name'], $payload['child_qty'], $payload['pack_description']);
+            unset($payload['item_name'], $payload['quantity'], $payload['category'], $payload['storage_location'], $payload['storage_location_id'], $payload['unit_id'], $payload['child_name'], $payload['child_qty'], $payload['pack_description']);
             $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_type', null, $payload);
             $this->reply($chatId, 'Pilih jenis unit berikutnya:', $this->typeKeyboard());
 
@@ -646,6 +655,31 @@ class TelegramBotService
             return;
         }
 
+        if (str_starts_with($data, 'loc_') && in_array($conversation->step, ['awaiting_single_location', 'awaiting_pack_location'], true)) {
+            $location = $this->resolveStorageLocation($data);
+            if ($location === null) {
+                $this->telegram->answerCallbackQuery($callbackId, 'Lokasi tidak valid.');
+
+                return;
+            }
+
+            $this->telegram->answerCallbackQuery($callbackId);
+            $payload['storage_location'] = $location->name;
+            $payload['storage_location_id'] = $location->id;
+
+            if ($conversation->step === 'awaiting_single_location') {
+                $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_photo', null, $payload);
+                $this->reply($chatId, 'Kirim <b>foto BB</b> lewat kamera Telegram, atau ketik <code>/skip</code> jika tanpa foto.');
+
+                return;
+            }
+
+            $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_pack_photo', null, $payload);
+            $this->reply($chatId, 'Kirim <b>foto wadah/segel</b>, atau ketik <code>/skip</code>.');
+
+            return;
+        }
+
         $this->telegram->answerCallbackQuery($callbackId);
     }
 
@@ -672,6 +706,8 @@ class TelegramBotService
             (string) $payload['storage_location'],
             $photoPath,
             $actor->user_name,
+            isset($payload['asset_type_id']) ? (int) $payload['asset_type_id'] : null,
+            isset($payload['storage_location_id']) ? (int) $payload['storage_location_id'] : null,
         );
 
         $this->sendUnitSummary($chatId, $unit, $actor);
@@ -705,6 +741,8 @@ class TelegramBotService
             $photoPath,
             $actor->user_name,
             [],
+            isset($payload['asset_type_id']) ? (int) $payload['asset_type_id'] : null,
+            isset($payload['storage_location_id']) ? (int) $payload['storage_location_id'] : null,
         );
 
         $payload['unit_id'] = $unit->id;
@@ -847,13 +885,12 @@ class TelegramBotService
         }
 
         if ($conversation->step === 'awaiting_location') {
-            if ($text === '') {
-                $this->reply($chatId, 'Kirim lokasi gudang saat ini.');
+            if (! $this->applyTypedStorageLocation($payload, $text)) {
+                $this->reply($chatId, 'Pilih tempat penyimpanan dari tombol, atau ketik nama lokasi yang terdaftar.', $this->locationKeyboard());
 
                 return;
             }
 
-            $payload['storage_location'] = $text;
             $this->putConversation((int) $actor->telegram_chat_id, 'kembali', 'awaiting_notes', null, $payload);
             $this->reply($chatId, 'Kirim catatan kondisi fisik (atau ketik <code>-</code> jika tidak ada).');
 
@@ -872,7 +909,13 @@ class TelegramBotService
             $notes = $text === '-' ? null : $text;
 
             try {
-                $this->warehouse->returnToWarehouse($unit, (string) $payload['storage_location'], $actor->user_name, $notes);
+                $this->warehouse->returnToWarehouse(
+                    $unit,
+                    (string) $payload['storage_location'],
+                    $actor->user_name,
+                    $notes,
+                    isset($payload['storage_location_id']) ? (int) $payload['storage_location_id'] : null,
+                );
             } catch (RuntimeException $exception) {
                 $this->clearConversation((int) $actor->telegram_chat_id);
                 $this->reply($chatId, $exception->getMessage());
@@ -1068,8 +1111,38 @@ class TelegramBotService
         $this->putConversation((int) $actor->telegram_chat_id, 'kembali', 'awaiting_location', null, ['unit_id' => $unit->id]);
         $this->reply(
             $chatId,
-            "📥 <b>Kembali gudang</b>\n{$this->unitHeader($unit)}\n\nKonfirmasi lokasi gudang (sekarang: {$this->e($unit->storage_location)})."
+            "📥 <b>Kembali gudang</b>\n{$this->unitHeader($unit)}\n\nPilih <b>tempat penyimpanan</b> (sekarang: {$this->e($unit->storageLocation?->name ?? $unit->storage_location)}).",
+            $this->locationKeyboard()
         );
+    }
+
+    private function handleKembaliCallback(
+        TelegramWhitelist $actor,
+        int|string $chatId,
+        string $callbackId,
+        TelegramConversation $conversation,
+        string $data,
+    ): void {
+        $payload = $conversation->payload ?? [];
+
+        if (str_starts_with($data, 'loc_') && $conversation->step === 'awaiting_location') {
+            $location = $this->resolveStorageLocation($data);
+            if ($location === null) {
+                $this->telegram->answerCallbackQuery($callbackId, 'Lokasi tidak valid.');
+
+                return;
+            }
+
+            $this->telegram->answerCallbackQuery($callbackId);
+            $payload['storage_location'] = $location->name;
+            $payload['storage_location_id'] = $location->id;
+            $this->putConversation((int) $actor->telegram_chat_id, 'kembali', 'awaiting_notes', null, $payload);
+            $this->reply($chatId, 'Kirim catatan kondisi fisik (atau ketik <code>-</code> jika tidak ada).');
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
     }
 
     private function promptEksekusiItems(int|string $chatId, TelegramWhitelist $actor, PhysicalUnit $unit): void
@@ -1505,6 +1578,62 @@ class TelegramBotService
         }
 
         return $rows;
+    }
+
+    /**
+     * @return array<int, array<int, array<string, string>>>
+     */
+    private function locationKeyboard(): array
+    {
+        $row = [];
+        $rows = [];
+
+        foreach (StorageLocation::active()->get() as $location) {
+            $row[] = ['text' => $location->name, 'callback_data' => 'loc_'.$location->id];
+            if (count($row) === 2) {
+                $rows[] = $row;
+                $row = [];
+            }
+        }
+
+        if ($row !== []) {
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    private function resolveStorageLocation(string $dataOrName): ?StorageLocation
+    {
+        if (preg_match('/^loc_(\d+)$/', $dataOrName, $match) === 1) {
+            return StorageLocation::query()->where('is_active', true)->find((int) $match[1]);
+        }
+
+        $name = trim($dataOrName);
+        if ($name === '') {
+            return null;
+        }
+
+        return StorageLocation::query()
+            ->where('is_active', true)
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+            ->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function applyTypedStorageLocation(array &$payload, string $text): bool
+    {
+        $location = $this->resolveStorageLocation($text);
+        if ($location === null) {
+            return false;
+        }
+
+        $payload['storage_location'] = $location->name;
+        $payload['storage_location_id'] = $location->id;
+
+        return true;
     }
 
     /**

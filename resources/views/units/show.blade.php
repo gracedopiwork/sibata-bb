@@ -30,7 +30,7 @@
             </div>
             <div>
                 <p class="text-xs uppercase text-navy-500">Lokasi</p>
-                <p class="font-semibold">{{ $unit->storage_location }}</p>
+                <p class="font-semibold">{{ $unit->storageLocation?->name ?? $unit->storage_location }}</p>
             </div>
             <div>
                 <p class="text-xs uppercase text-navy-500">Status</p>
@@ -128,7 +128,11 @@
             <form class="card space-y-3" method="POST" action="{{ route('units.return', $unit) }}">
                 @csrf
                 <h3 class="font-serif text-lg">Kembali gudang</h3>
-                <input class="field" name="storage_location" value="{{ $unit->storage_location }}" required>
+                <select class="field" name="storage_location_id" required>
+                    @foreach ($storageLocations as $location)
+                        <option value="{{ $location->id }}" @selected((int) $unit->storage_location_id === (int) $location->id || $unit->storage_location === $location->name)>{{ $location->name }}</option>
+                    @endforeach
+                </select>
                 <textarea class="field" name="notes" rows="2" placeholder="Kondisi fisik"></textarea>
                 <button class="btn-primary w-full">Catat pengembalian</button>
             </form>
