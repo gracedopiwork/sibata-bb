@@ -30,6 +30,7 @@
                 <th class="px-4 py-3">Kode</th>
                 <th class="px-4 py-3">Perkara</th>
                 <th class="px-4 py-3">Terdakwa</th>
+                <th class="px-4 py-3">Jenis aset</th>
                 <th class="px-4 py-3">Lokasi</th>
                 <th class="px-4 py-3">Isi</th>
                 <th class="px-4 py-3">Status</th>
@@ -45,6 +46,7 @@
                     </td>
                     <td class="px-4 py-3">{{ $unit->legalCase?->case_number }}</td>
                     <td class="px-4 py-3">{{ $unit->legalCase?->defendant_name }}</td>
+                    <td class="px-4 py-3">{{ $unit->assetType?->name ?? '—' }}</td>
                     <td class="px-4 py-3">{{ $unit->storage_location }}</td>
                     <td class="px-4 py-3">{{ $unit->itemsSummary(60) }}</td>
                     <td class="px-4 py-3"><span class="{{ $unit->current_status->badgeClass() }}">{{ $unit->current_status->label() }}</span></td>

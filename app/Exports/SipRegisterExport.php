@@ -59,7 +59,7 @@ class SipRegisterExport implements FromQuery, ShouldAutoSize, WithHeadings, With
             $unit?->storage_location ?? '',
             $unit?->current_status?->value ?? '',
             $row->item_name,
-            $row->category->value,
+            $row->categoryLabel(),
             $row->quantity,
             $row->verdict_status->value,
             $row->execution_ba_number ?? '',

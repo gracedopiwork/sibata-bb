@@ -16,12 +16,30 @@
             <input class="field" name="case_number" value="{{ old('case_number') }}" placeholder="REG-012/PID.SUS/2026" required>
         </div>
         <div>
-            <label class="label">Nama JPU</label>
-            <input class="field" name="prosecutor_name" value="{{ old('prosecutor_name') }}" required>
+            <label class="label">Jenis perkara</label>
+            <select class="field" name="case_type_id" required>
+                <option value="">Pilih jenis</option>
+                @foreach ($caseTypes as $type)
+                    <option value="{{ $type->id }}" @selected(old('case_type_id') == $type->id)>{{ $type->name }}</option>
+                @endforeach
+            </select>
         </div>
         <div class="md:col-span-2">
             <label class="label">Nama terdakwa</label>
             <input class="field" name="defendant_name" value="{{ old('defendant_name') }}" required>
+        </div>
+        <div class="md:col-span-2">
+            <label class="label">JPU</label>
+            <div class="grid gap-2 rounded-xl border border-navy-100 p-3 md:grid-cols-2">
+                @forelse ($prosecutors as $prosecutor)
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" name="prosecutor_ids[]" value="{{ $prosecutor->id }}" @checked(in_array($prosecutor->id, old('prosecutor_ids', [])))>
+                        <span>{{ $prosecutor->name }}@if($prosecutor->nip) <span class="text-navy-500">({{ $prosecutor->nip }})</span>@endif</span>
+                    </label>
+                @empty
+                    <p class="text-sm text-navy-500 md:col-span-2">Belum ada JPU. Tambah dulu di menu Data Master → JPU.</p>
+                @endforelse
+            </div>
         </div>
         <div class="md:col-span-2">
             <label class="label">Catatan internal (opsional)</label>
@@ -55,13 +73,21 @@
                     <label class="label">Kategori</label>
                     <select class="field" :name="'units['+index+'][category]'" x-model="unit.category">
                         @foreach ($categories as $category)
-                            <option value="{{ $category->value }}">{{ $category->label() }}</option>
+                            <option value="{{ $category->code }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div x-show="unit.type === 'SINGLE'">
                     <label class="label">Jumlah / satuan</label>
                     <input class="field" :name="'units['+index+'][quantity]'" x-model="unit.quantity" placeholder="1 unit">
+                </div>
+                <div>
+                    <label class="label">Jenis aset</label>
+                    <select class="field" :name="'units['+index+'][asset_type_id]'" x-model="unit.asset_type_id" required>
+                        @foreach ($assetTypes as $type)
+                            <option value="{{ $type->id }}">{{ $type->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div>
                     <label class="label">Lokasi gudang</label>
@@ -88,7 +114,7 @@
                             <label class="label">Kategori</label>
                             <select class="field" :name="'units['+index+'][children]['+cIndex+'][category]'" x-model="child.category">
                                 @foreach ($categories as $category)
-                                    <option value="{{ $category->value }}">{{ $category->label() }}</option>
+                                    <option value="{{ $category->code }}">{{ $category->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -114,27 +140,30 @@
 <script>
 function caseForm() {
     const nextKey = () => Date.now() + Math.random();
-    const child = () => ({ key: nextKey(), item_name: '', category: 'NARKOTIKA', quantity: '1' });
+    const defaultCategory = @json($categories->first()?->code ?? 'NARKOTIKA');
+    const defaultAssetType = @json($assetTypes->first()?->id);
+    const child = () => ({ key: nextKey(), item_name: '', category: defaultCategory, quantity: '1' });
     return {
         units: [{
             key: nextKey(),
             type: 'SINGLE',
             item_name: '',
-            category: 'NARKOTIKA',
+            category: defaultCategory,
+            asset_type_id: defaultAssetType,
             quantity: '1 unit',
             storage_location: '',
             children: [],
         }],
         addSingle() {
             this.units.push({
-                key: nextKey(), type: 'SINGLE', item_name: '', category: 'NARKOTIKA',
-                quantity: '1 unit', storage_location: '', children: [],
+                key: nextKey(), type: 'SINGLE', item_name: '', category: defaultCategory,
+                asset_type_id: defaultAssetType, quantity: '1 unit', storage_location: '', children: [],
             });
         },
         addPack() {
             this.units.push({
-                key: nextKey(), type: 'PACK', item_name: '', category: 'NARKOTIKA',
-                quantity: '', storage_location: '', children: [child()],
+                key: nextKey(), type: 'PACK', item_name: '', category: defaultCategory,
+                asset_type_id: defaultAssetType, quantity: '', storage_location: '', children: [child()],
             });
         },
         removeUnit(index) {

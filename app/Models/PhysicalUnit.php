@@ -16,6 +16,7 @@ class PhysicalUnit extends Model
         'case_id',
         'unit_code',
         'unit_type',
+        'asset_type_id',
         'storage_location',
         'photo_path',
         'current_status',
@@ -34,6 +35,11 @@ class PhysicalUnit extends Model
     public function legalCase(): BelongsTo
     {
         return $this->belongsTo(LegalCase::class, 'case_id');
+    }
+
+    public function assetType(): BelongsTo
+    {
+        return $this->belongsTo(AssetType::class);
     }
 
     public function items(): HasMany

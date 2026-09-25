@@ -16,6 +16,8 @@
     <div class="card lg:col-span-1">
         <p class="text-xs font-bold uppercase tracking-wide text-navy-500">Status perkara</p>
         <p class="mt-2 font-serif text-2xl">{{ $case->case_status->label() }}</p>
+        <p class="mt-2 text-sm text-navy-600">Jenis: {{ $case->caseType?->name ?? '—' }}</p>
+        <p class="mt-1 text-sm text-navy-600">JPU: {{ $case->prosecutor_name }}</p>
         @if($case->notes)
             <p class="mt-4 text-sm text-navy-600">{{ $case->notes }}</p>
         @endif

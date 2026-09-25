@@ -18,17 +18,21 @@ class WarehouseService
     public function createSingleUnit(
         LegalCase $case,
         string $itemName,
-        ItemCategory $category,
+        ItemCategory|string $category,
         string $quantity,
         string $storageLocation,
         ?string $photoPath,
         string $handledBy,
+        ?int $assetTypeId = null,
     ): PhysicalUnit {
-        return DB::transaction(function () use ($case, $itemName, $category, $quantity, $storageLocation, $photoPath, $handledBy) {
+        $categoryCode = $category instanceof ItemCategory ? $category->value : $category;
+
+        return DB::transaction(function () use ($case, $itemName, $categoryCode, $quantity, $storageLocation, $photoPath, $handledBy, $assetTypeId) {
             $unit = PhysicalUnit::query()->create([
                 'case_id' => $case->id,
                 'unit_code' => PhysicalUnit::nextUnitCode(UnitType::Single),
                 'unit_type' => UnitType::Single,
+                'asset_type_id' => $assetTypeId,
                 'storage_location' => $storageLocation,
                 'photo_path' => $photoPath,
                 'current_status' => UnitStatus::TersimpanGudang,
@@ -36,7 +40,7 @@ class WarehouseService
 
             $unit->items()->create([
                 'item_name' => $itemName,
-                'category' => $category,
+                'category' => $categoryCode,
                 'quantity' => $quantity,
                 'verdict_status' => VerdictStatus::MenungguPutusan,
             ]);
@@ -53,21 +57,24 @@ class WarehouseService
         ?string $photoPath,
         string $handledBy,
         array $children,
+        ?int $assetTypeId = null,
     ): PhysicalUnit {
-        return DB::transaction(function () use ($case, $storageLocation, $photoPath, $handledBy, $children) {
+        return DB::transaction(function () use ($case, $storageLocation, $photoPath, $handledBy, $children, $assetTypeId) {
             $unit = PhysicalUnit::query()->create([
                 'case_id' => $case->id,
                 'unit_code' => PhysicalUnit::nextUnitCode(UnitType::Pack),
                 'unit_type' => UnitType::Pack,
+                'asset_type_id' => $assetTypeId,
                 'storage_location' => $storageLocation,
                 'photo_path' => $photoPath,
                 'current_status' => UnitStatus::TersimpanGudang,
             ]);
 
             foreach ($children as $child) {
+                $category = $child['category'];
                 $unit->items()->create([
                     'item_name' => $child['item_name'],
-                    'category' => $child['category'],
+                    'category' => $category instanceof ItemCategory ? $category->value : $category,
                     'quantity' => $child['quantity'] ?? '1',
                     'verdict_status' => VerdictStatus::MenungguPutusan,
                 ]);
@@ -79,7 +86,7 @@ class WarehouseService
         });
     }
 
-    public function addPackChild(PhysicalUnit $unit, string $itemName, ItemCategory $category, string $quantity = '1'): UnitItem
+    public function addPackChild(PhysicalUnit $unit, string $itemName, ItemCategory|string $category, string $quantity = '1'): UnitItem
     {
         if ($unit->unit_type !== UnitType::Pack) {
             throw new \RuntimeException('Hanya unit paket yang dapat menerima rincian isi.');
@@ -87,7 +94,7 @@ class WarehouseService
 
         return $unit->items()->create([
             'item_name' => $itemName,
-            'category' => $category,
+            'category' => $category instanceof ItemCategory ? $category->value : $category,
             'quantity' => $quantity,
             'verdict_status' => VerdictStatus::MenungguPutusan,
         ]);

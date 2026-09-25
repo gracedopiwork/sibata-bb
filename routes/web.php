@@ -10,6 +10,10 @@ use App\Http\Controllers\SipReportController;
 use App\Http\Controllers\BotSettingsController;
 use App\Http\Controllers\TelegramWhitelistController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProsecutorController;
+use App\Http\Controllers\CaseTypeController;
+use App\Http\Controllers\EvidenceCategoryController;
+use App\Http\Controllers\AssetTypeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -50,6 +54,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('bot', [BotSettingsController::class, 'edit'])->name('bot.edit');
         Route::post('bot', [BotSettingsController::class, 'update'])->name('bot.update');
         Route::resource('users', UserController::class)->except(['show']);
+        Route::resource('prosecutors', ProsecutorController::class)->except(['show', 'create']);
+        Route::resource('case-types', CaseTypeController::class)->except(['show', 'create']);
+        Route::resource('evidence-categories', EvidenceCategoryController::class)->except(['show', 'create']);
+        Route::resource('asset-types', AssetTypeController::class)->except(['show', 'create']);
         Route::post('users/{user}/license/regenerate', [UserController::class, 'regenerateLicense'])->name('users.license.regenerate');
         Route::post('users/{user}/license/revoke', [UserController::class, 'revokeLicense'])->name('users.license.revoke');
         Route::post('users/{user}/license/restore', [UserController::class, 'restoreLicense'])->name('users.license.restore');

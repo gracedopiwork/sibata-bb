@@ -18,8 +18,23 @@
             <input class="field" name="defendant_name" value="{{ old('defendant_name', $case->defendant_name) }}" required>
         </div>
         <div>
-            <label class="label">Nama JPU</label>
-            <input class="field" name="prosecutor_name" value="{{ old('prosecutor_name', $case->prosecutor_name) }}" required>
+            <label class="label">Jenis perkara</label>
+            <select class="field" name="case_type_id" required>
+                @foreach ($caseTypes as $type)
+                    <option value="{{ $type->id }}" @selected(old('case_type_id', $case->case_type_id) == $type->id)>{{ $type->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="md:col-span-2">
+            <label class="label">JPU</label>
+            <div class="grid gap-2 rounded-xl border border-navy-100 p-3 md:grid-cols-2">
+                @foreach ($prosecutors as $prosecutor)
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" name="prosecutor_ids[]" value="{{ $prosecutor->id }}" @checked(in_array($prosecutor->id, old('prosecutor_ids', $case->prosecutors->pluck('id')->all())))>
+                        <span>{{ $prosecutor->name }}</span>
+                    </label>
+                @endforeach
+            </div>
         </div>
         <div class="md:col-span-2">
             <label class="label">Status perkara</label>

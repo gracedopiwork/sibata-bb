@@ -44,7 +44,7 @@
                 @foreach ($unit->items as $item)
                     <li class="py-3">
                         <p class="font-semibold">{{ $item->item_name }}</p>
-                        <p class="text-navy-600">{{ $item->quantity }} · {{ $item->category->label() }}</p>
+                        <p class="text-navy-600">{{ $item->quantity }} · {{ $item->categoryLabel() }}</p>
                         <p class="text-xs text-navy-500">{{ $item->verdict_status->label() }}</p>
                     </li>
                 @endforeach

@@ -25,6 +25,10 @@
                 <p class="font-semibold">{{ $unit->legalCase?->prosecutor_name }}</p>
             </div>
             <div>
+                <p class="text-xs uppercase text-navy-500">Jenis aset</p>
+                <p class="font-semibold">{{ $unit->assetType?->name ?? '—' }}</p>
+            </div>
+            <div>
                 <p class="text-xs uppercase text-navy-500">Lokasi</p>
                 <p class="font-semibold">{{ $unit->storage_location }}</p>
             </div>
@@ -55,7 +59,7 @@
                         @foreach ($unit->items as $item)
                             <tr>
                                 <td class="py-2">{{ $item->item_name }}</td>
-                                <td class="py-2">{{ $item->category->label() }}</td>
+                                <td class="py-2">{{ $item->categoryLabel() }}</td>
                                 <td class="py-2">{{ $item->quantity }}</td>
                                 <td class="py-2">{{ $item->verdict_status->label() }}</td>
                             </tr>
@@ -70,7 +74,7 @@
                     <input class="field md:col-span-2" name="item_name" placeholder="Nama isi paket" required>
                     <select class="field" name="category" required>
                         @foreach ($categories as $category)
-                            <option value="{{ $category->value }}">{{ $category->label() }}</option>
+                            <option value="{{ $category->code }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                     <input class="field" name="quantity" value="1" required>

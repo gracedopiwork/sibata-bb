@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\ItemCategory;
+use App\Models\EvidenceCategory;
 use App\Enums\TelegramAccessRole;
 use App\Enums\UnitStatus;
 use App\Enums\UnitType;
@@ -555,7 +555,7 @@ class TelegramBotService
         }
 
         if (str_starts_with($data, 'cat_') && in_array($conversation->step, ['awaiting_single_category', 'awaiting_child_category'], true)) {
-            $category = ItemCategory::tryFrom(substr($data, 4));
+            $category = EvidenceCategory::activeCode(substr($data, 4));
             if ($category === null) {
                 $this->telegram->answerCallbackQuery($callbackId, 'Kategori tidak valid.');
 
@@ -565,7 +565,7 @@ class TelegramBotService
             $this->telegram->answerCallbackQuery($callbackId);
 
             if ($conversation->step === 'awaiting_single_category') {
-                $payload['category'] = $category->value;
+                $payload['category'] = $category;
                 $this->putConversation((int) $actor->telegram_chat_id, 'tambah', 'awaiting_single_location', null, $payload);
                 $this->reply($chatId, 'Kirim <b>lokasi gudang</b> (contoh: Parkiran BB No. 04).');
 
@@ -636,7 +636,7 @@ class TelegramBotService
     private function saveSingleFromPayload(TelegramWhitelist $actor, int|string $chatId, array $payload, ?string $photoPath): void
     {
         $case = LegalCase::query()->find((int) ($payload['case_id'] ?? 0));
-        $category = ItemCategory::tryFrom((string) ($payload['category'] ?? ''));
+        $category = EvidenceCategory::activeCode((string) ($payload['category'] ?? ''));
 
         if ($case === null || $category === null) {
             $this->clearConversation((int) $actor->telegram_chat_id);
@@ -700,7 +700,7 @@ class TelegramBotService
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function savePackChild(TelegramWhitelist $actor, int|string $chatId, array $payload, ItemCategory $category): void
+    private function savePackChild(TelegramWhitelist $actor, int|string $chatId, array $payload, string $category): void
     {
         $unit = PhysicalUnit::query()->find((int) ($payload['unit_id'] ?? 0));
 
@@ -1186,7 +1186,7 @@ class TelegramBotService
 
     private function unitCard(PhysicalUnit $unit): string
     {
-        $items = $unit->items->map(fn (UnitItem $item) => '• '.$item->item_name.' ('.$item->category->label().')')->implode("\n");
+        $items = $unit->items->map(fn (UnitItem $item) => '• '.$item->item_name.' ('.$item->categoryLabel().')')->implode("\n");
 
         return implode("\n", [
             "<b>{$this->e($unit->unit_code)}</b> · {$unit->unit_type->label()}",
@@ -1294,8 +1294,8 @@ class TelegramBotService
         $row = [];
         $rows = [];
 
-        foreach (ItemCategory::cases() as $category) {
-            $row[] = ['text' => $category->label(), 'callback_data' => 'cat_'.$category->value];
+        foreach (EvidenceCategory::active()->get() as $category) {
+            $row[] = ['text' => $category->name, 'callback_data' => 'cat_'.$category->code];
             if (count($row) === 2) {
                 $rows[] = $row;
                 $row = [];

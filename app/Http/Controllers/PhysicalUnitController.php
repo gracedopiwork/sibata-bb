@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ItemCategory;
 use App\Enums\UnitStatus;
 use App\Enums\UnitType;
 use App\Enums\VerdictStatus;
+use App\Models\EvidenceCategory;
 use App\Models\PhysicalUnit;
 use App\Models\UnitItem;
 use App\Services\WarehouseService;
@@ -21,7 +21,7 @@ class PhysicalUnitController extends Controller
     public function index(Request $request): View
     {
         $units = PhysicalUnit::query()
-            ->with(['legalCase', 'items'])
+            ->with(['legalCase', 'items', 'assetType'])
             ->search($request->string('q')->toString())
             ->when($request->filled('status'), fn ($query) => $query->where('current_status', $request->string('status')))
             ->when($request->filled('type'), fn ($query) => $query->where('unit_type', $request->string('type')))
@@ -38,7 +38,7 @@ class PhysicalUnitController extends Controller
 
     public function show(PhysicalUnit $unit): View
     {
-        $unit->load(['legalCase', 'items', 'mutations']);
+        $unit->load(['legalCase', 'items', 'mutations', 'assetType']);
 
         return view('units.show', [
             'unit' => $unit,
@@ -46,7 +46,7 @@ class PhysicalUnitController extends Controller
                 VerdictStatus::cases(),
                 fn (VerdictStatus $status) => $status->isFinal()
             )),
-            'categories' => ItemCategory::cases(),
+            'categories' => EvidenceCategory::active()->get(),
         ]);
     }
 
@@ -98,7 +98,7 @@ class PhysicalUnitController extends Controller
     {
         $data = $request->validate([
             'item_name' => ['required', 'string', 'max:255'],
-            'category' => ['required', 'string'],
+            'category' => ['required', 'exists:evidence_categories,code'],
             'quantity' => ['required', 'string', 'max:50'],
         ]);
 
@@ -106,7 +106,7 @@ class PhysicalUnitController extends Controller
             $this->warehouse->addPackChild(
                 $unit,
                 $data['item_name'],
-                ItemCategory::from($data['category']),
+                $data['category'],
                 $data['quantity'],
             );
         } catch (RuntimeException $exception) {

@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CaseStatus;
-use App\Enums\ItemCategory;
 use App\Enums\UnitType;
 use App\Http\Requests\StoreLegalCaseRequest;
 use App\Http\Requests\UpdateLegalCaseRequest;
+use App\Models\AssetType;
+use App\Models\CaseType;
+use App\Models\EvidenceCategory;
 use App\Models\LegalCase;
+use App\Models\Prosecutor;
 use App\Services\WarehouseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +23,7 @@ class LegalCaseController extends Controller
     public function index(Request $request): View
     {
         $cases = LegalCase::query()
+            ->with(['caseType'])
             ->withCount('physicalUnits')
             ->search($request->string('q')->toString())
             ->when($request->filled('status'), fn ($query) => $query->where('case_status', $request->string('status')))
@@ -36,7 +40,10 @@ class LegalCaseController extends Controller
     public function create(): View
     {
         return view('cases.create', [
-            'categories' => ItemCategory::cases(),
+            'categories' => EvidenceCategory::active()->get(),
+            'assetTypes' => AssetType::active()->get(),
+            'prosecutors' => Prosecutor::active()->get(),
+            'caseTypes' => CaseType::active()->get(),
         ]);
     }
 
@@ -45,13 +52,22 @@ class LegalCaseController extends Controller
         $data = $request->validated();
         $handler = $request->user()?->name ?? 'Web PB3R';
 
+        $prosecutorIds = $data['prosecutor_ids'];
+        $prosecutorNames = Prosecutor::query()
+            ->whereIn('id', $prosecutorIds)
+            ->orderBy('name')
+            ->pluck('name')
+            ->implode('; ');
+
         $case = LegalCase::query()->create([
             'case_number' => $data['case_number'],
             'defendant_name' => $data['defendant_name'],
-            'prosecutor_name' => $data['prosecutor_name'],
+            'prosecutor_name' => $prosecutorNames,
+            'case_type_id' => $data['case_type_id'],
             'notes' => $data['notes'] ?? null,
             'case_status' => CaseStatus::Tahap2,
         ]);
+        $case->prosecutors()->sync($prosecutorIds);
 
         $createdIds = [];
 
@@ -69,18 +85,19 @@ class LegalCaseController extends Controller
                 $unit = $this->warehouse->createSingleUnit(
                     $case,
                     $unitInput['item_name'],
-                    ItemCategory::from($unitInput['category']),
+                    (string) $unitInput['category'],
                     $unitInput['quantity'] ?? '1',
                     $unitInput['storage_location'],
                     $photoPath,
                     $handler,
+                    isset($unitInput['asset_type_id']) ? (int) $unitInput['asset_type_id'] : null,
                 );
             } else {
                 $children = collect($unitInput['children'] ?? [])
                     ->filter(fn ($child) => filled($child['item_name'] ?? null))
                     ->map(fn ($child) => [
                         'item_name' => $child['item_name'],
-                        'category' => ItemCategory::from($child['category']),
+                        'category' => (string) $child['category'],
                         'quantity' => $child['quantity'] ?? '1',
                     ])
                     ->all();
@@ -91,6 +108,7 @@ class LegalCaseController extends Controller
                     $photoPath,
                     $handler,
                     $children,
+                    isset($unitInput['asset_type_id']) ? (int) $unitInput['asset_type_id'] : null,
                 );
             }
 
@@ -105,7 +123,7 @@ class LegalCaseController extends Controller
 
     public function show(LegalCase $case): View
     {
-        $case->load(['physicalUnits.items', 'physicalUnits.mutations']);
+        $case->load(['caseType', 'prosecutors', 'physicalUnits.items', 'physicalUnits.mutations']);
 
         return view('cases.show', [
             'case' => $case,
@@ -115,15 +133,29 @@ class LegalCaseController extends Controller
 
     public function edit(LegalCase $case): View
     {
+        $case->load('prosecutors');
+
         return view('cases.edit', [
             'case' => $case,
             'statuses' => CaseStatus::cases(),
+            'prosecutors' => Prosecutor::active()->get(),
+            'caseTypes' => CaseType::active()->get(),
         ]);
     }
 
     public function update(UpdateLegalCaseRequest $request, LegalCase $case): RedirectResponse
     {
-        $case->update($request->validated());
+        $data = $request->validated();
+        $prosecutorIds = $data['prosecutor_ids'];
+        $data['prosecutor_name'] = Prosecutor::query()
+            ->whereIn('id', $prosecutorIds)
+            ->orderBy('name')
+            ->pluck('name')
+            ->implode('; ');
+        unset($data['prosecutor_ids']);
+
+        $case->update($data);
+        $case->prosecutors()->sync($prosecutorIds);
 
         return redirect()->route('cases.show', $case)->with('status', 'Data perkara diperbarui.');
     }

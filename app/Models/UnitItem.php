@@ -27,10 +27,18 @@ class UnitItem extends Model
     protected function casts(): array
     {
         return [
-            'category' => ItemCategory::class,
             'verdict_status' => VerdictStatus::class,
             'execution_date' => 'date',
         ];
+    }
+
+    public function categoryLabel(): string
+    {
+        $code = $this->category instanceof ItemCategory
+            ? $this->category->value
+            : (string) $this->category;
+
+        return EvidenceCategory::labelFor($code);
     }
 
     public function physicalUnit(): BelongsTo

@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\AssetType;
+use App\Models\CaseType;
 use App\Models\PhysicalUnit;
+use App\Models\Prosecutor;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -29,6 +32,10 @@ class SitabaSmokeTest extends TestCase
         $this->actingAs($admin)->get('/print-labels')->assertOk();
         $this->actingAs($admin)->get('/reports')->assertOk();
         $this->actingAs($admin)->get('/users')->assertOk();
+        $this->actingAs($admin)->get('/prosecutors')->assertOk()->assertSee('Data Master JPU');
+        $this->actingAs($admin)->get('/case-types')->assertOk()->assertSee('Jenis Perkara');
+        $this->actingAs($admin)->get('/asset-types')->assertOk()->assertSee('Jenis Aset');
+        $this->actingAs($admin)->get('/evidence-categories')->assertOk()->assertSee('Jenis BB');
         $this->actingAs($admin)->get('/whitelist')->assertOk();
         $this->actingAs($admin)->get('/bot')->assertOk()->assertSee('BotFather');
     }
@@ -157,10 +164,12 @@ class SitabaSmokeTest extends TestCase
         $response = $this->actingAs($admin)->post('/cases', [
             'case_number' => $caseNumber,
             'defendant_name' => 'La Ode Tes',
-            'prosecutor_name' => 'JPU Uji, S.H.',
+            'case_type_id' => CaseType::query()->where('code', 'NARKOTIKA')->value('id'),
+            'prosecutor_ids' => [Prosecutor::query()->firstOrFail()->id],
             'units' => [
                 [
                     'type' => 'SINGLE',
+                    'asset_type_id' => AssetType::query()->where('code', 'BERGERAK')->value('id'),
                     'item_name' => '1 unit parang gagang kayu '.$caseNumber,
                     'category' => 'SENJATA',
                     'quantity' => '1 unit',
@@ -168,6 +177,7 @@ class SitabaSmokeTest extends TestCase
                 ],
                 [
                     'type' => 'PACK',
+                    'asset_type_id' => AssetType::query()->where('code', 'BERGERAK')->value('id'),
                     'storage_location' => 'Brankas PB3R Laci 09',
                     'children' => [
                         [

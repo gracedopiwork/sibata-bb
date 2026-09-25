@@ -27,6 +27,11 @@
             <nav class="flex-1 space-y-1 overflow-y-auto p-4">
                 <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}">Dashboard</a>
                 <a href="{{ route('cases.index') }}" class="nav-link {{ request()->routeIs('cases.*') ? 'nav-link-active' : '' }}">Register Perkara</a>
+                <p class="px-3 pt-4 text-[11px] font-bold uppercase tracking-wider text-navy-100/40">Data Master</p>
+                <a href="{{ route('prosecutors.index') }}" class="nav-link {{ request()->routeIs('prosecutors.*') ? 'nav-link-active' : '' }}">JPU</a>
+                <a href="{{ route('case-types.index') }}" class="nav-link {{ request()->routeIs('case-types.*') ? 'nav-link-active' : '' }}">Jenis Perkara</a>
+                <a href="{{ route('asset-types.index') }}" class="nav-link {{ request()->routeIs('asset-types.*') ? 'nav-link-active' : '' }}">Jenis Aset</a>
+                <a href="{{ route('evidence-categories.index') }}" class="nav-link {{ request()->routeIs('evidence-categories.*') ? 'nav-link-active' : '' }}">Jenis BB</a>
                 <a href="{{ route('units.index') }}" class="nav-link {{ request()->routeIs('units.*') ? 'nav-link-active' : '' }}">Inventaris Fisik</a>
                 <a href="{{ route('print-labels.index') }}" class="nav-link {{ request()->routeIs('print-labels.*') ? 'nav-link-active' : '' }}">Antrean Cetak Label</a>
                 <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'nav-link-active' : '' }}">Laporan / Ekspor</a>

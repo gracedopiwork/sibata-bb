@@ -25,6 +25,7 @@
             <tr>
                 <th class="px-4 py-3">No. Perkara</th>
                 <th class="px-4 py-3">Terdakwa</th>
+                <th class="px-4 py-3">Jenis</th>
                 <th class="px-4 py-3">JPU</th>
                 <th class="px-4 py-3">Status</th>
                 <th class="px-4 py-3">Unit fisik</th>
@@ -36,6 +37,7 @@
                 <tr>
                     <td class="px-4 py-3 font-semibold">{{ $case->case_number }}</td>
                     <td class="px-4 py-3">{{ $case->defendant_name }}</td>
+                    <td class="px-4 py-3">{{ $case->caseType?->name ?? '—' }}</td>
                     <td class="px-4 py-3">{{ $case->prosecutor_name }}</td>
                     <td class="px-4 py-3"><span class="badge-navy">{{ $case->case_status->label() }}</span></td>
                     <td class="px-4 py-3">{{ $case->physical_units_count }}</td>
@@ -44,7 +46,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="6" class="px-4 py-8 text-center text-navy-500">Belum ada perkara.</td></tr>
+                <tr><td colspan="7" class="px-4 py-8 text-center text-navy-500">Belum ada perkara.</td></tr>
             @endforelse
         </tbody>
     </table>
