@@ -9,6 +9,7 @@
 .env.backup
 .env.production
 dokumen/_extract*.txt
+dokumen/~$*
 /database/*.sqlite
 /database/*.sqlite-journal
 .phpactor.json
