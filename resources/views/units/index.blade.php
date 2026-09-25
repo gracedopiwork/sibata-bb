@@ -24,7 +24,7 @@
 </form>
 
 <div class="card overflow-x-auto p-0">
-    <table class="min-w-full text-sm">
+    <table class="min-w-[1100px] w-full text-sm">
         <thead class="bg-navy-50 text-left text-xs uppercase tracking-wide text-navy-600">
             <tr>
                 <th class="px-4 py-3">Kode</th>
@@ -40,15 +40,15 @@
         <tbody class="divide-y divide-navy-100">
             @forelse ($units as $unit)
                 <tr>
-                    <td class="px-4 py-3">
+                    <td class="whitespace-nowrap px-4 py-3 align-top">
                         <a class="font-semibold" href="{{ route('units.show', $unit) }}">{{ $unit->unit_code }}</a>
                         <p class="text-xs text-navy-500">{{ $unit->unit_type->label() }}</p>
                     </td>
-                    <td class="px-4 py-3">{{ $unit->legalCase?->case_number }}</td>
-                    <td class="px-4 py-3">{{ $unit->legalCase?->defendant_name }}</td>
-                    <td class="px-4 py-3">{{ $unit->assetType?->name ?? '—' }}</td>
-                    <td class="px-4 py-3">{{ $unit->storage_location }}</td>
-                    <td class="px-4 py-3">{{ $unit->itemsSummary(60) }}</td>
+                    <td class="max-w-xs break-words px-4 py-3 align-top">{{ $unit->legalCase?->case_number }}</td>
+                    <td class="max-w-xs break-words px-4 py-3 align-top">{{ $unit->legalCase?->defendant_name }}</td>
+                    <td class="whitespace-nowrap px-4 py-3 align-top">{{ $unit->assetType?->name ?? '—' }}</td>
+                    <td class="px-4 py-3 align-top">{{ $unit->storageLocation?->name ?? $unit->storage_location }}</td>
+                    <td class="item-copy max-w-sm px-4 py-3 align-top">{{ $unit->itemsSummary(120) }}</td>
                     <td class="px-4 py-3"><span class="{{ $unit->current_status->badgeClass() }}">{{ $unit->current_status->label() }}</span></td>
                     <td class="px-4 py-3">
                         <a class="font-semibold text-navy-800 hover:text-gold-600" href="{{ route('print-labels.sheet', ['ids' => $unit->id]) }}">

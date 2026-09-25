@@ -5,64 +5,72 @@
 @section('subheading', 'Wadah tersegel. Isi BB tetap bisa dicari satu per satu di Daftar BB')
 
 @section('content')
-<form class="mb-4 flex flex-wrap gap-2" method="GET">
-    <input class="field w-72" name="q" value="{{ request('q') }}" placeholder="Kode PKT, perkara, terdakwa, isi">
-    <select class="field w-48" name="status">
-        <option value="">Semua status gudang</option>
-        @foreach ($statuses as $status)
-            <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
-        @endforeach
-    </select>
+<form class="filter-bar" method="GET">
+    <div class="min-w-64 flex-1">
+        <label class="label" for="q">Cari</label>
+        <input id="q" class="field" name="q" value="{{ request('q') }}" placeholder="Kode PKT, perkara, terdakwa, isi">
+    </div>
+    <div class="w-56">
+        <label class="label" for="status">Status gudang</label>
+        <select id="status" class="field" name="status">
+            <option value="">Semua status</option>
+            @foreach ($statuses as $status)
+                <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
+            @endforeach
+        </select>
+    </div>
     <button class="btn-outline">Cari</button>
     <a class="btn-gold" href="{{ route('items.index') }}">Daftar BB</a>
 </form>
 
-<div class="card overflow-x-auto p-0">
-    <table class="min-w-full text-sm">
-        <thead class="bg-navy-50 text-left text-xs uppercase tracking-wide text-navy-600">
-            <tr>
-                <th class="px-4 py-3">Kode segel</th>
-                <th class="px-4 py-3">Perkara</th>
-                <th class="px-4 py-3">Isi BB</th>
-                <th class="px-4 py-3">Lokasi</th>
-                <th class="px-4 py-3">Status</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-navy-100">
-            @forelse ($units as $unit)
-                <tr>
-                    <td class="px-4 py-3">
-                        <div class="flex items-center gap-3">
-                            @if($unit->hasPhoto())
-                                <img class="h-12 w-12 rounded-lg object-cover" src="{{ $unit->photoUrl() }}" alt="{{ $unit->unit_code }}">
-                            @endif
-                            <div>
-                                <a class="font-semibold" href="{{ route('units.show', $unit) }}">{{ $unit->unit_code }}</a>
-                                <p class="text-xs text-navy-500">{{ $unit->items->count() }} barang di dalam segel</p>
-                            </div>
+<div class="space-y-4">
+    @forelse ($units as $unit)
+        <article class="card">
+            <div class="flex flex-col gap-5 md:flex-row">
+                @if($unit->hasPhoto())
+                    <img class="h-28 w-28 shrink-0 rounded-xl object-cover ring-1 ring-navy-100" src="{{ $unit->photoUrl() }}" alt="{{ $unit->unit_code }}">
+                @else
+                    <div class="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl bg-navy-50 text-xs font-semibold text-navy-400 ring-1 ring-navy-100">Tanpa foto</div>
+                @endif
+
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <a class="font-serif text-xl text-navy-900 hover:text-gold-600" href="{{ route('units.show', $unit) }}">{{ $unit->unit_code }}</a>
+                            <p class="mt-1 text-sm text-navy-500">{{ $unit->items->count() }} barang di dalam segel</p>
                         </div>
-                    </td>
-                    <td class="px-4 py-3">
-                        <p>{{ $unit->legalCase?->case_number }}</p>
-                        <p class="text-xs text-navy-500">{{ $unit->legalCase?->defendant_name }}</p>
-                    </td>
-                    <td class="px-4 py-3">
-                        <ul class="space-y-1">
-                            @foreach ($unit->items as $item)
-                                <li>
-                                    <a class="font-semibold hover:text-gold-600" href="{{ route('items.show', $item) }}">{{ $item->item_name }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </td>
-                    <td class="px-4 py-3">{{ $unit->storage_location }}</td>
-                    <td class="px-4 py-3"><span class="{{ $unit->current_status->badgeClass() }}">{{ $unit->current_status->label() }}</span></td>
-                </tr>
-            @empty
-                <tr><td colspan="5" class="px-4 py-8 text-center text-navy-500">Belum ada segel.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-    <div class="px-4 py-3">{{ $units->links() }}</div>
+                        <span class="{{ $unit->current_status->badgeClass() }}">{{ $unit->current_status->label() }}</span>
+                    </div>
+
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-navy-500">Perkara</p>
+                            <p class="mt-1 font-medium break-words">{{ $unit->legalCase?->case_number }}</p>
+                            <p class="text-sm text-navy-600">{{ $unit->legalCase?->defendant_name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-navy-500">Lokasi</p>
+                            <p class="mt-1 font-medium">{{ $unit->storageLocation?->name ?? $unit->storage_location }}</p>
+                        </div>
+                    </div>
+
+                    <ol class="mt-4 list-decimal space-y-2 pl-5">
+                        @forelse ($unit->items as $item)
+                            <li class="item-copy">
+                                <a class="font-medium hover:text-gold-600" href="{{ route('items.show', $item) }}">{{ $item->displayName() }}</a>
+                                <span class="text-navy-500"> · {{ $item->categoryLabel() }}</span>
+                            </li>
+                        @empty
+                            <li class="text-sm text-navy-500">Isi belum dicatat.</li>
+                        @endforelse
+                    </ol>
+                </div>
+            </div>
+        </article>
+    @empty
+        <div class="card py-12 text-center text-navy-500">Belum ada segel.</div>
+    @endforelse
 </div>
+
+<div class="mt-4">{{ $units->links() }}</div>
 @endsection

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Logo SITABA-BB Kejari Wajo">
+  <rect width="512" height="512" fill="#07111f"/>
+  <circle cx="256" cy="256" r="236" fill="none" stroke="#c9a227" stroke-width="3.2"/>
+  <circle cx="256" cy="256" r="224" fill="none" stroke="#c9a227" stroke-width="1.4"/>
+
+  <path d="M256 78 L392 142 V268 C392 352 322 404 256 434 C190 404 120 352 120 268 V142 Z"
+        fill="none" stroke="#e8c547" stroke-width="3.2" stroke-linejoin="round"/>
+
+  <!-- evidence box -->
+  <g fill="none" stroke="#e8c547" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M256 142 L322 174 L256 206 L190 174 Z"/>
+    <path d="M190 174 V238 L256 270 V206 Z"/>
+    <path d="M256 206 V270 L322 238 V174 Z"/>
+    <path d="M256 142 V206"/>
+  </g>
+
+  <!-- lock -->
+  <g fill="none" stroke="#e8c547" stroke-width="2.4" stroke-linecap="round">
+    <rect x="232" y="228" width="24" height="20" rx="3"/>
+    <path d="M237 228 V220 A7 7 0 0 1 251 220 V228"/>
+    <circle cx="244" cy="238" r="2.2" fill="#e8c547" stroke="none"/>
+  </g>
+
+  <!-- QR mark -->
+  <g fill="#e8c547">
+    <rect x="292" y="232" width="7" height="7"/>
+    <rect x="302" y="232" width="7" height="7"/>
+    <rect x="312" y="232" width="7" height="7"/>
+    <rect x="292" y="242" width="7" height="7"/>
+    <rect x="312" y="242" width="7" height="7"/>
+    <rect x="292" y="252" width="7" height="7"/>
+    <rect x="302" y="252" width="7" height="7"/>
+    <rect x="312" y="252" width="7" height="7"/>
+    <rect x="297" y="237" width="4" height="4"/>
+    <rect x="307" y="247" width="4" height="4"/>
+  </g>
+
+  <text x="256" y="392" text-anchor="middle" fill="#e8c547" font-family="Georgia, 'Times New Roman', serif" font-size="42" font-weight="700" letter-spacing="2">SITABA-BB</text>
+  <text x="256" y="424" text-anchor="middle" fill="#c9a227" font-family="Georgia, 'Times New Roman', serif" font-size="16" font-weight="600" letter-spacing="4">KEJARI WAJO</text>
+</svg>

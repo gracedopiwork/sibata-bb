@@ -103,7 +103,10 @@ class PhysicalUnit extends Model
 
     public function itemsSummary(int $limit = 80): string
     {
-        $names = $this->items->pluck('item_name')->filter()->values();
+        $names = $this->items
+            ->map(fn (UnitItem $item) => $item->displayName())
+            ->filter()
+            ->values();
 
         if ($names->isEmpty()) {
             return '-';

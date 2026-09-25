@@ -69,7 +69,7 @@
                         @foreach ($unit->items as $item)
                             <tr>
                                 <td class="py-2">
-                                    <a class="font-semibold hover:text-gold-600" href="{{ route('items.show', $item) }}">{{ $item->item_name }}</a>
+                                    <a class="font-semibold hover:text-gold-600" href="{{ route('items.show', $item) }}">{{ $item->displayName() }}</a>
                                 </td>
                                 <td class="py-2">{{ $item->categoryLabel() }}</td>
                                 <td class="py-2">{{ $item->quantity }}</td>
@@ -106,13 +106,13 @@
             <h3 class="font-serif text-lg">Eksekusi putusan per item</h3>
             @foreach ($unit->items as $item)
                 @if($item->verdict_status->isFinal())
-                    <p class="mt-3 text-sm text-navy-600">{{ $item->item_name }} — {{ $item->verdict_status->label() }}
+                    <p class="mt-3 text-sm leading-relaxed text-navy-600">{{ $item->displayName() }} — {{ $item->verdict_status->label() }}
                         @if($item->execution_ba_number) (BA {{ $item->execution_ba_number }}) @endif
                     </p>
                 @else
                     <form class="mt-4 space-y-3 rounded-xl border border-navy-100 p-4" method="POST" action="{{ route('units.items.execute', [$unit, $item]) }}" enctype="multipart/form-data">
                         @csrf
-                        <p class="font-semibold">{{ $item->item_name }}</p>
+                        <p class="font-semibold leading-relaxed">{{ $item->displayName() }}</p>
                         <div class="grid gap-3 md:grid-cols-2">
                             <select class="field" name="verdict_status" required>
                                 @foreach ($verdicts as $verdict)

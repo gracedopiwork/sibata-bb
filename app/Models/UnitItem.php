@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ItemCategory;
 use App\Enums\VerdictStatus;
+use App\Support\ReadableText;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,6 +32,11 @@ class UnitItem extends Model
             'verdict_status' => VerdictStatus::class,
             'execution_date' => 'date',
         ];
+    }
+
+    public function displayName(): string
+    {
+        return ReadableText::make($this->item_name);
     }
 
     public function categoryLabel(): string

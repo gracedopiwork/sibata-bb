@@ -31,7 +31,7 @@ class PhysicalUnitController extends Controller
     public function index(Request $request): View
     {
         $units = PhysicalUnit::query()
-            ->with(['legalCase', 'items', 'assetType'])
+            ->with(['legalCase', 'items', 'assetType', 'storageLocation'])
             ->search($request->string('q')->toString())
             ->when($request->filled('status'), fn ($query) => $query->where('current_status', $request->string('status')))
             ->when($request->filled('type'), fn ($query) => $query->where('unit_type', $request->string('type')))
@@ -49,7 +49,7 @@ class PhysicalUnitController extends Controller
     public function seals(Request $request): View
     {
         $units = PhysicalUnit::query()
-            ->with(['legalCase', 'items', 'assetType', 'photo'])
+            ->with(['legalCase', 'items', 'assetType', 'photo', 'storageLocation'])
             ->where('unit_type', UnitType::Pack)
             ->search($request->string('q')->toString())
             ->when($request->filled('status'), fn ($query) => $query->where('current_status', $request->string('status')))

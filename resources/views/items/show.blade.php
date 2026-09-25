@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $item->item_name)
-@section('heading', $item->item_name)
+@section('title', $item->displayName())
+@section('heading', $item->displayName())
 @section('subheading', 'Detail barang bukti · '.($item->physicalUnit?->unit_code ?? 'Tanpa unit'))
 
 @section('content')

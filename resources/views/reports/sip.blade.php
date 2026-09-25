@@ -43,7 +43,7 @@
                     </td>
                     <td class="px-4 py-3">{{ $item->physicalUnit?->legalCase?->case_number }}</td>
                     <td class="px-4 py-3">{{ $item->physicalUnit?->legalCase?->defendant_name }}</td>
-                    <td class="px-4 py-3">{{ $item->item_name }}</td>
+                    <td class="item-copy max-w-md px-4 py-3">{{ $item->displayName() }}</td>
                     <td class="px-4 py-3">
                         @if($item->physicalUnit)
                             <span class="{{ $item->physicalUnit->current_status->badgeClass() }}">{{ $item->physicalUnit->current_status->label() }}</span>

@@ -73,4 +73,13 @@
     .nav-group-label {
         @apply px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-navy-100/40;
     }
+
+    .filter-bar {
+        @apply mb-5 flex flex-wrap items-end gap-3 rounded-2xl border border-navy-100 bg-white p-4 shadow-panel;
+    }
+
+    .item-copy {
+        @apply break-words text-sm leading-relaxed text-navy-800 [overflow-wrap:anywhere];
+        word-break: normal;
+    }
 }

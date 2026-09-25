@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'SITABA-BB') — Kejari Wajo</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-sitaba-bb-mark.svg') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800|source-serif-4:600,700" rel="stylesheet" />
     <style>
@@ -20,9 +21,7 @@
         <aside class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-navy-900 text-white transition lg:static lg:translate-x-0"
                :class="sidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
             <div class="border-b border-white/10 px-6 py-5">
-                <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-gold-400">Kejari Wajo · PB3R</p>
-                <h1 class="font-serif text-2xl text-white">SITABA-BB</h1>
-                <p class="mt-1 text-xs text-navy-100/70">Tata kelola barang bukti</p>
+                @include('partials.brand', ['size' => 56])
             </div>
             <nav class="flex-1 space-y-1 overflow-y-auto p-4">
                 <p class="px-3 text-[11px] font-bold uppercase tracking-wider text-navy-100/40">Operasional</p>
