@@ -50,5 +50,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('bot', [BotSettingsController::class, 'edit'])->name('bot.edit');
         Route::post('bot', [BotSettingsController::class, 'update'])->name('bot.update');
         Route::resource('users', UserController::class)->except(['show']);
+        Route::post('users/{user}/license/regenerate', [UserController::class, 'regenerateLicense'])->name('users.license.regenerate');
+        Route::post('users/{user}/license/revoke', [UserController::class, 'revokeLicense'])->name('users.license.revoke');
+        Route::post('users/{user}/license/restore', [UserController::class, 'restoreLicense'])->name('users.license.restore');
     });
 });

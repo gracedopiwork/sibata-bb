@@ -20,6 +20,14 @@ class EnsureUserIsActive
                 ->withErrors(['email' => 'Akun Anda tidak aktif.']);
         }
 
+        if ($user !== null && ! $user->hasValidLicense()) {
+            auth()->logout();
+
+            return redirect()
+                ->route('login')
+                ->withErrors(['email' => 'Lisensi portal Anda tidak berlaku. Hubungi administrator.']);
+        }
+
         return $next($request);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserRole;
 use App\Models\PhysicalUnit;
 use App\Models\User;
 use Tests\TestCase;
@@ -43,12 +44,98 @@ class SitabaSmokeTest extends TestCase
 
     public function test_non_admin_cannot_login_to_dashboard(): void
     {
+        $petugas = User::query()->where('email', 'petugas@kejari-wajo.go.id')->firstOrFail();
+
         $this->post('/login', [
-            'email' => 'petugas@kejari-wajo.go.id',
+            'email' => $petugas->email,
             'password' => 'password',
+            'license_key' => $petugas->license_key,
         ])->assertSessionHasErrors('email');
 
         $this->assertGuest();
+    }
+
+    public function test_admin_login_requires_valid_license(): void
+    {
+        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+
+        $this->post('/login', [
+            'email' => $admin->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('license_key');
+
+        $this->assertGuest();
+
+        $this->post('/login', [
+            'email' => $admin->email,
+            'password' => 'password',
+            'license_key' => 'SITABA-SALAH-XXXX-XXXX',
+        ])->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+
+        $this->post('/login', [
+            'email' => $admin->email,
+            'password' => 'password',
+            'license_key' => $admin->license_key,
+        ])->assertRedirect('/dashboard');
+
+        $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_creating_user_issues_license(): void
+    {
+        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $email = 'lisensi.uji.'.now()->format('Hisu').'@kejari-wajo.go.id';
+
+        $response = $this->actingAs($admin)->post('/users', [
+            'name' => 'Admin Lisensi Uji',
+            'email' => $email,
+            'nip' => '198001012006031099',
+            'role' => 'admin',
+            'is_active' => '1',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $response->assertRedirect('/users');
+        $this->assertNotEmpty(session('issued_license'));
+
+        $created = User::query()->where('email', $email)->first();
+
+        $this->assertNotEmpty($created?->license_key);
+        $this->assertTrue($created?->hasValidLicense());
+        $this->assertStringStartsWith('SITABA-', (string) $created?->license_key);
+
+        $created?->delete();
+    }
+
+    public function test_revoked_license_cannot_login(): void
+    {
+        $admin = User::query()->where('email', 'admin@kejari-wajo.go.id')->firstOrFail();
+        $target = User::factory()->create([
+            'role' => UserRole::Admin,
+            'is_active' => true,
+            'password' => 'password',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('users.license.revoke', $target))
+            ->assertRedirect('/users');
+
+        $this->assertFalse($target->fresh()->hasValidLicense());
+
+        $this->post('/logout');
+
+        $this->post('/login', [
+            'email' => $target->email,
+            'password' => 'password',
+            'license_key' => $target->license_key,
+        ])->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+
+        $target->delete();
     }
 
     public function test_public_qr_view_is_visible(): void

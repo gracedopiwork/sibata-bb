@@ -33,7 +33,7 @@
                 @if(auth()->user()->canManageUsers())
                     <a href="{{ route('bot.edit') }}" class="nav-link {{ request()->routeIs('bot.*') ? 'nav-link-active' : '' }}">Bot Telegram</a>
                     <a href="{{ route('whitelist.index') }}" class="nav-link {{ request()->routeIs('whitelist.*') ? 'nav-link-active' : '' }}">Akses Telegram</a>
-                    <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'nav-link-active' : '' }}">Pengguna</a>
+                    <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'nav-link-active' : '' }}">Pengguna &amp; Lisensi</a>
                 @endif
             </nav>
             <div class="border-t border-white/10 p-4">

@@ -31,9 +31,13 @@ class UserController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['telegram_id'] = $data['telegram_id'] ?: null;
 
-        User::query()->create($data);
+        $user = User::query()->create($data);
 
-        return redirect()->route('users.index')->with('status', 'Pengguna berhasil ditambahkan.');
+        return redirect()->route('users.index')->with([
+            'status' => 'Pengguna berhasil ditambahkan. Berikan kode lisensi kepada yang bersangkutan.',
+            'issued_license' => $user->license_key,
+            'issued_license_user' => $user->name,
+        ]);
     }
 
     public function edit(User $user): View
@@ -66,5 +70,36 @@ class UserController extends Controller
         $user->delete();
 
         return redirect()->route('users.index')->with('status', 'Pengguna dihapus.');
+    }
+
+    public function regenerateLicense(User $user): RedirectResponse
+    {
+        $user->issueLicense();
+
+        return redirect()->route('users.index')->with([
+            'status' => 'Lisensi baru diterbitkan. Kode lama tidak berlaku.',
+            'issued_license' => $user->license_key,
+            'issued_license_user' => $user->name,
+        ]);
+    }
+
+    public function revokeLicense(User $user): RedirectResponse
+    {
+        abort_if($user->id === auth()->id(), 422, 'Tidak dapat mencabut lisensi akun sendiri.');
+
+        $user->revokeLicense();
+
+        return redirect()->route('users.index')->with('status', 'Lisensi '.$user->name.' dicabut. Akun ini tidak dapat masuk portal.');
+    }
+
+    public function restoreLicense(User $user): RedirectResponse
+    {
+        $user->restoreLicense();
+
+        return redirect()->route('users.index')->with([
+            'status' => 'Lisensi '.$user->name.' diaktifkan kembali.',
+            'issued_license' => $user->license_key,
+            'issued_license_user' => $user->name,
+        ]);
     }
 }

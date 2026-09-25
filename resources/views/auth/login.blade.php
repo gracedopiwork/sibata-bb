@@ -18,7 +18,7 @@
         </div>
         <div class="rounded-3xl border border-white/10 bg-white p-8 text-navy-900 shadow-2xl">
             <h2 class="font-serif text-2xl">Masuk Dashboard</h2>
-            <p class="mt-1 text-sm text-navy-600">Hanya administrator yang dapat masuk. Petugas gudang memakai bot Telegram.</p>
+            <p class="mt-1 text-sm text-navy-600">Hanya administrator berlisensi. Akun dan kode lisensi diterbitkan dari menu Pengguna. Petugas gudang memakai bot Telegram.</p>
             <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-4">
                 @csrf
                 <div>
@@ -28,6 +28,11 @@
                 <div>
                     <label class="label" for="password">Kata sandi</label>
                     <input id="password" class="field" type="password" name="password" required>
+                </div>
+                <div>
+                    <label class="label" for="license_key">Kode lisensi</label>
+                    <input id="license_key" class="field font-mono uppercase tracking-wider" type="text" name="license_key" value="{{ old('license_key') }}" required autocomplete="off" placeholder="SITABA-XXXX-XXXX-XXXX">
+                    <p class="mt-1 text-xs text-navy-500">Kode ini dibuat otomatis saat admin menambah pengguna.</p>
                 </div>
                 <label class="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="remember" class="rounded border-navy-300"> Ingat saya

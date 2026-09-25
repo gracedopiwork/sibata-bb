@@ -2,7 +2,7 @@
 
 @section('title', 'Tambah Pengguna')
 @section('heading', 'Tambah Pengguna')
-@section('subheading', 'Admin masuk dashboard. Petugas PB3R hanya memakai bot Telegram.')
+@section('subheading', 'Kode lisensi dibuat otomatis setelah akun disimpan. Tanpa kode itu, pengguna tidak bisa masuk portal.')
 
 @section('content')
 <div class="card max-w-2xl">
