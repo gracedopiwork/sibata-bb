@@ -2092,26 +2092,13 @@ class TelegramBotService
      */
     private function authorize(int $telegramId, int|string $chatId, bool $silent = false, array $from = []): ?TelegramWhitelist
     {
-        $actor = TelegramWhitelist::findActive($telegramId);
+        $linked = User::query()->where('telegram_id', $telegramId)->first();
 
-        if ($actor !== null) {
-            $linked = User::query()->where('telegram_id', $telegramId)->first();
-
-            if ($linked !== null && (! $linked->is_active || ! $linked->hasValidLicense())) {
-                if (! $silent) {
-                    $this->reply(
-                        $chatId,
-                        'Lisensi bot Anda tidak berlaku. Hubungi admin portal untuk menerbitkan ulang, lalu ketik /lisensi KODE.'
-                    );
-                }
-
-                return null;
-            }
-
-            return $actor;
+        if ($linked === null || ! $linked->is_active || ! $linked->hasValidLicense()) {
+            return null;
         }
 
-        return null;
+        return TelegramWhitelist::findActive($telegramId);
     }
 
     private function handleGuestMessage(int $telegramId, int|string $chatId, string $text): void

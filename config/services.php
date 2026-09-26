@@ -40,7 +40,7 @@ return [
         'webhook_url' => env('TELEGRAM_WEBHOOK_URL'),
         'group_pb3r_id' => env('TELEGRAM_GROUP_PB3R_ID'),
         'secret_token' => env('TELEGRAM_SECRET_TOKEN'),
-        'allow_first_admin' => env('TELEGRAM_ALLOW_FIRST_ADMIN', true),
+        'allow_first_admin' => env('TELEGRAM_ALLOW_FIRST_ADMIN', false),
     ],
 
 ];
