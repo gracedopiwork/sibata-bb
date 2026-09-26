@@ -34,7 +34,7 @@ class SitabaSmokeTest extends TestCase
 
         $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('Dashboard PB3R');
         $this->actingAs($admin)->get('/cases')->assertOk()->assertSee('Register Perkara');
-        $this->actingAs($admin)->get('/cases/create')->assertOk()->assertSee('Tempel daftar isi');
+        $this->actingAs($admin)->get('/cases/create')->assertOk()->assertSee('Tambah ke daftar');
         $this->actingAs($admin)->get('/units')->assertOk()->assertSee('Inventaris Fisik');
         $this->actingAs($admin)->get('/items')->assertOk()->assertSee('Daftar Barang Bukti');
         $this->actingAs($admin)->get('/seals')->assertOk()->assertSee('Daftar Segel');

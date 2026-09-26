@@ -81,23 +81,24 @@
             </div>
 
             @if($unit->unit_type->value === 'PACK')
-                <form class="mt-6 space-y-2" method="POST" action="{{ route('units.children.bulk', $unit) }}">
+                <form class="mt-6 grid gap-3 md:grid-cols-12" method="POST" action="{{ route('units.children.store', $unit) }}">
                     @csrf
-                    <label class="label">Tempel daftar isi (satu baris per barang)</label>
-                    <textarea class="field font-mono text-sm" name="contents_bulk" rows="5" placeholder="2 sachet sabu 0,5 gram&#10;1 unit timbangan digital | ELEKTRONIK&#10;HP Vivo Y21 | ELEKTRONIK | 1 unit" required></textarea>
-                    <p class="text-xs text-navy-500">Format: nama | kategori | jumlah. Segel tidak perlu dibuka.</p>
-                    <button class="btn-gold">Tambah semua isi</button>
-                </form>
-                <form class="mt-4 grid gap-3 md:grid-cols-4" method="POST" action="{{ route('units.children.store', $unit) }}">
-                    @csrf
-                    <input class="field md:col-span-2" name="item_name" placeholder="Atau tambah satu item" required>
-                    <select class="field" name="category" required>
-                        @foreach ($categories as $category)
-                            <option value="{{ $category->code }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                    <input class="field" name="quantity" value="1" required>
-                    <button class="btn-outline md:col-span-4">Tambah satu isi</button>
+                    <div class="md:col-span-6">
+                        <label class="label">Nama barang</label>
+                        <input class="field" name="item_name" placeholder="1 sachet sabu 0,5 gram" required>
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="label">Jenis</label>
+                        <select class="field" name="category" required>
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->code }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <input type="hidden" name="quantity" value="1">
+                    <div class="flex items-end md:col-span-2">
+                        <button class="btn-gold w-full">Tambah ke daftar</button>
+                    </div>
                 </form>
             @endif
         </div>

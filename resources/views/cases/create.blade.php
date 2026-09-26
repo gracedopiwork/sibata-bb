@@ -105,41 +105,39 @@
 
             <div x-show="unit.type === 'PACK'" class="space-y-3 rounded-xl bg-navy-50 p-4">
                 <p class="text-sm font-semibold">Rincian isi paket</p>
-                <p class="text-xs text-navy-600">Segel tidak perlu dibuka. Tempel daftar dari BA/penyidik, satu baris per barang. Boleh dikosongkan dulu dan dilengkapi nanti.</p>
-                <div>
-                    <label class="label">Tempel daftar isi</label>
-                    <textarea class="field font-mono text-sm" rows="5" :name="'units['+index+'][contents_bulk]'" x-model="unit.contents_bulk"
-                              placeholder="2 sachet sabu 0,5 gram&#10;1 unit timbangan digital | ELEKTRONIK&#10;HP Vivo Y21 | ELEKTRONIK | 1 unit"></textarea>
-                    <p class="mt-1 text-xs text-navy-500">Format: nama | kategori | jumlah. Kategori dan jumlah opsional.</p>
-                    <button type="button" class="btn-gold mt-2" @click="applyBulk(index)">Terapkan ke tabel</button>
-                </div>
-                <div class="flex items-center justify-between">
-                    <p class="text-xs font-semibold text-navy-600">Atau isi satu per satu</p>
-                    <button type="button" class="btn-outline" @click="addChild(index)">+ Baris</button>
-                </div>
-                <template x-for="(child, cIndex) in unit.children" :key="child.key">
-                    <div class="grid gap-3 rounded-lg bg-white p-3 md:grid-cols-12">
-                        <div class="md:col-span-6">
-                            <label class="label">Nama item</label>
-                            <input class="field" :name="'units['+index+'][children]['+cIndex+'][item_name]'" x-model="child.item_name" placeholder="1 sachet sabu 0,5 gram">
-                        </div>
-                        <div class="md:col-span-3">
-                            <label class="label">Kategori</label>
-                            <select class="field" :name="'units['+index+'][children]['+cIndex+'][category]'" x-model="child.category">
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->code }}">{{ $category->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="label">Jumlah</label>
-                            <input class="field" :name="'units['+index+'][children]['+cIndex+'][quantity]'" x-model="child.quantity">
-                        </div>
-                        <div class="flex items-end md:col-span-1">
-                            <button type="button" class="btn-outline w-full" @click="removeChild(index, cIndex)">×</button>
-                        </div>
+                <p class="text-xs text-navy-600">Isi nama barang, pilih jenis, lalu tekan Tambah ke daftar. Segel tidak perlu dibuka.</p>
+                <div class="grid gap-3 md:grid-cols-12">
+                    <div class="md:col-span-6">
+                        <label class="label">Nama barang</label>
+                        <input class="field" x-model="unit.draft_name" placeholder="1 sachet sabu 0,5 gram" @keydown.enter.prevent="addChild(index)">
                     </div>
-                </template>
+                    <div class="md:col-span-4">
+                        <label class="label">Jenis</label>
+                        <select class="field" x-model="unit.draft_category">
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->code }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-end md:col-span-2">
+                        <button type="button" class="btn-gold w-full" @click="addChild(index)">Tambah ke daftar</button>
+                    </div>
+                </div>
+                <ol class="space-y-2">
+                    <template x-for="(child, cIndex) in unit.children" :key="child.key">
+                        <li class="flex items-start justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm">
+                            <div class="min-w-0">
+                                <p class="font-medium" x-text="(cIndex + 1) + '. ' + child.item_name"></p>
+                                <p class="text-xs text-navy-500" x-text="categoryNames[child.category] || child.category"></p>
+                                <input type="hidden" :name="'units['+index+'][children]['+cIndex+'][item_name]'" :value="child.item_name">
+                                <input type="hidden" :name="'units['+index+'][children]['+cIndex+'][category]'" :value="child.category">
+                                <input type="hidden" :name="'units['+index+'][children]['+cIndex+'][quantity]'" :value="child.quantity">
+                            </div>
+                            <button type="button" class="btn-outline text-red-700" @click="removeChild(index, cIndex)">Hapus</button>
+                        </li>
+                    </template>
+                </ol>
+                <p class="text-xs text-navy-500" x-show="unit.children.length === 0">Belum ada isi. Tambah satu per satu di atas.</p>
             </div>
         </div>
     </template>
@@ -156,9 +154,15 @@ function caseForm() {
     const defaultCategory = @json($categories->first()?->code ?? 'NARKOTIKA');
     const defaultAssetType = @json($assetTypes->first()?->id);
     const defaultStorageLocation = @json($storageLocations->first()?->id);
-    const categoryMap = @json($categories->mapWithKeys(fn ($category) => [strtolower($category->code) => $category->code]));
-    const child = () => ({ key: nextKey(), item_name: '', category: defaultCategory, quantity: '1' });
+    const categoryNames = @json($categories->mapWithKeys(fn ($category) => [$category->code => $category->name]));
+    const emptyPack = () => ({
+        key: nextKey(), type: 'PACK', item_name: '', category: defaultCategory,
+        asset_type_id: defaultAssetType, quantity: '',
+        storage_location_id: defaultStorageLocation, children: [],
+        draft_name: '', draft_category: defaultCategory,
+    });
     return {
+        categoryNames,
         units: [{
             key: nextKey(),
             type: 'SINGLE',
@@ -168,54 +172,40 @@ function caseForm() {
             quantity: '1 unit',
             storage_location_id: defaultStorageLocation,
             children: [],
-            contents_bulk: '',
+            draft_name: '',
+            draft_category: defaultCategory,
         }],
         addSingle() {
             this.units.push({
                 key: nextKey(), type: 'SINGLE', item_name: '', category: defaultCategory,
                 asset_type_id: defaultAssetType, quantity: '1 unit',
-                storage_location_id: defaultStorageLocation, children: [], contents_bulk: '',
+                storage_location_id: defaultStorageLocation, children: [],
+                draft_name: '', draft_category: defaultCategory,
             });
         },
         addPack() {
-            this.units.push({
-                key: nextKey(), type: 'PACK', item_name: '', category: defaultCategory,
-                asset_type_id: defaultAssetType, quantity: '',
-                storage_location_id: defaultStorageLocation, children: [], contents_bulk: '',
-            });
+            this.units.push(emptyPack());
         },
         removeUnit(index) {
             if (this.units.length === 1) return;
             this.units.splice(index, 1);
         },
         addChild(index) {
-            this.units[index].children.push(child());
+            const unit = this.units[index];
+            const name = (unit.draft_name || '').trim();
+            if (!name) {
+                return;
+            }
+            unit.children.push({
+                key: nextKey(),
+                item_name: name,
+                category: unit.draft_category || defaultCategory,
+                quantity: '1',
+            });
+            unit.draft_name = '';
         },
         removeChild(index, cIndex) {
             this.units[index].children.splice(cIndex, 1);
-        },
-        applyBulk(index) {
-            const lines = (this.units[index].contents_bulk || '').split(/\r?\n/);
-            const parsed = [];
-            lines.forEach((raw) => {
-                const line = raw.trim();
-                if (!line) return;
-                const parts = line.split('|').map((part) => part.trim()).filter(Boolean);
-                const name = parts[0] || line;
-                let category = defaultCategory;
-                let quantity = '1';
-                if (parts[1]) {
-                    const mapped = categoryMap[parts[1].toLowerCase()];
-                    if (mapped) category = mapped;
-                    else quantity = parts[1];
-                }
-                if (parts[2]) quantity = parts[2];
-                parsed.push({ key: nextKey(), item_name: name, category, quantity });
-            });
-            if (parsed.length) {
-                this.units[index].children = parsed;
-                this.units[index].contents_bulk = '';
-            }
         },
     };
 }
