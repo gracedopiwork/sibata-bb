@@ -1,28 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SITABA-BB">
-  <rect width="512" height="512" fill="#07111f"/>
-  <circle cx="256" cy="256" r="236" fill="none" stroke="#c9a227" stroke-width="3.2"/>
-  <circle cx="256" cy="256" r="224" fill="none" stroke="#c9a227" stroke-width="1.4"/>
-  <path d="M256 86 L400 154 V286 C400 372 322 428 256 458 C190 428 112 372 112 286 V154 Z"
-        fill="none" stroke="#e8c547" stroke-width="3.4" stroke-linejoin="round"/>
-  <g fill="none" stroke="#e8c547" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M256 168 L332 206 L256 244 L180 206 Z"/>
-    <path d="M180 206 V278 L256 316 V244 Z"/>
-    <path d="M256 244 V316 L332 278 V206 Z"/>
-    <path d="M256 168 V244"/>
-  </g>
-  <g fill="none" stroke="#e8c547" stroke-width="2.6" stroke-linecap="round">
-    <rect x="230" y="258" width="28" height="22" rx="3"/>
-    <path d="M236 258 V249 A8 8 0 0 1 252 249 V258"/>
-    <circle cx="244" cy="270" r="2.4" fill="#e8c547" stroke="none"/>
-  </g>
-  <g fill="#e8c547">
-    <rect x="300" y="268" width="8" height="8"/>
-    <rect x="312" y="268" width="8" height="8"/>
-    <rect x="324" y="268" width="8" height="8"/>
-    <rect x="300" y="280" width="8" height="8"/>
-    <rect x="324" y="280" width="8" height="8"/>
-    <rect x="300" y="292" width="8" height="8"/>
-    <rect x="312" y="292" width="8" height="8"/>
-    <rect x="324" y="292" width="8" height="8"/>
-  </g>
+  <circle cx="256" cy="256" r="248" fill="#0b1f3a"/>
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#c9a227" stroke-width="16"/>
+  <circle cx="256" cy="256" r="210" fill="#fffdf6"/>
+  <path d="M150 198 C150 198 256 132 362 198" fill="none" stroke="#0b1f3a" stroke-width="18" stroke-linecap="round"/>
+  <text x="168" y="300" text-anchor="middle" fill="#0b1f3a" font-family="Georgia, serif" font-size="120" font-weight="700">S</text>
+  <text x="344" y="300" text-anchor="middle" fill="#0b1f3a" font-family="Georgia, serif" font-size="120" font-weight="700">B</text>
+  <rect x="210" y="188" width="36" height="58" rx="8" fill="#fff" stroke="#c9a227" stroke-width="4"/>
+  <circle cx="228" cy="216" r="7" fill="#0b1f3a"/>
+  <path d="M118 328 C160 308 352 308 394 328 L376 372 C336 354 176 354 136 372 Z" fill="#f4efe0" stroke="#c9a227" stroke-width="3"/>
+  <text x="256" y="360" text-anchor="middle" fill="#0b1f3a" font-family="Georgia, serif" font-size="32" font-weight="700">SITABA-BB</text>
 </svg>

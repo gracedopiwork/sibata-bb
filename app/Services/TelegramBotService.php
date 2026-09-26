@@ -125,7 +125,13 @@ class TelegramBotService
                 return;
             }
 
-            $this->redeemLicense($telegramId, $chatId, $text, $from);
+            $pendingName = TelegramConversation::query()
+                ->where('telegram_user_id', $telegramId)
+                ->where('action', 'daftar')
+                ->value('payload');
+            $displayName = is_array($pendingName) ? (string) ($pendingName['display_name'] ?? '') : '';
+
+            $this->redeemLicense($telegramId, $chatId, $text, $from, $displayName !== '' ? $displayName : null);
 
             return;
         }
@@ -133,6 +139,10 @@ class TelegramBotService
         $actor = $this->authorize($telegramId, $chatId, $isGroup, $from);
 
         if ($actor === null) {
+            if (! $isGroup) {
+                $this->handleGuestMessage($telegramId, $chatId, $text);
+            }
+
             return;
         }
 
@@ -2101,64 +2111,76 @@ class TelegramBotService
             return $actor;
         }
 
-        if ($this->claimFirstAdmin($telegramId, $from)) {
-            $actor = TelegramWhitelist::findActive($telegramId);
-
-            if ($actor !== null && ! $silent) {
-                $this->reply(
-                    $chatId,
-                    "✅ Akun Telegram Anda didaftarkan sebagai <b>Admin PB3R</b> pertama.\n"
-                    ."ID: <code>{$telegramId}</code>\n\n"
-                    .'Ketik /start untuk membuka menu.'
-                );
-            }
-
-            return $actor;
-        }
-
-        if (! $silent) {
-            $this->reply(
-                $chatId,
-                'Akses bot ditolak. Minta kode lisensi ke admin portal, lalu ketik:\n<code>/lisensi SITABA-XXXX-XXXX-XXXX</code>'
-            );
-        }
-
         return null;
     }
 
-    /**
-     * @param  array<string, mixed>  $from
-     */
-    private function claimFirstAdmin(int $telegramId, array $from): bool
+    private function handleGuestMessage(int $telegramId, int|string $chatId, string $text): void
     {
-        if (! (bool) config('services.telegram.allow_first_admin', true)) {
-            return false;
+        if (in_array($text, ['/batal', '/batalkan', '/cancel'], true)) {
+            $this->clearConversation($telegramId);
+            $this->reply($chatId, 'Pendaftaran dibatalkan. Ketik /start untuk mendaftar lagi.');
+
+            return;
         }
 
-        $hasRealAdmin = TelegramWhitelist::query()
-            ->where('is_active', true)
-            ->get()
-            ->contains(fn (TelegramWhitelist $row): bool => strlen((string) $row->telegram_chat_id) >= 6);
+        $conversation = TelegramConversation::query()->where('telegram_user_id', $telegramId)->first();
 
-        if ($hasRealAdmin) {
-            return false;
+        if ($text === '/start' || $conversation === null || $conversation->action !== 'daftar') {
+            $this->startDaftar($telegramId, $chatId);
+
+            return;
         }
 
-        $name = trim(((string) ($from['first_name'] ?? '')).' '.((string) ($from['last_name'] ?? '')));
-        if ($name === '') {
-            $name = (string) ($from['username'] ?? 'Admin PB3R');
-        }
+        $this->continueDaftar($telegramId, $chatId, $conversation, $text);
+    }
 
-        TelegramWhitelist::query()->updateOrCreate(
-            ['telegram_chat_id' => (string) $telegramId],
-            [
-                'user_name' => $name,
-                'role' => TelegramAccessRole::AdminPb3r,
-                'is_active' => true,
-            ]
+    private function startDaftar(int $telegramId, int|string $chatId): void
+    {
+        $this->putConversation($telegramId, 'daftar', 'awaiting_name');
+        $this->reply(
+            $chatId,
+            "Selamat datang di Bot <b>SIBATA-BB</b>.\n"
+            ."Sistem Informasi Barang Bukti dan Barang Rampasan — Seksi PB3R Kejari Wajo.\n\n"
+            .'Masukkan <b>nama Anda</b>.'
         );
+    }
 
-        return true;
+    private function continueDaftar(int $telegramId, int|string $chatId, TelegramConversation $conversation, string $text): void
+    {
+        $payload = $conversation->payload ?? [];
+
+        if ($conversation->step === 'awaiting_name') {
+            if ($this->extractLicenseKey($text) !== null) {
+                $this->redeemLicense($telegramId, $chatId, $text, [], $payload['display_name'] ?? null);
+
+                return;
+            }
+
+            $name = trim($text);
+            if ($name === '' || str_starts_with($name, '/')) {
+                $this->reply($chatId, 'Masukkan nama Anda, bukan perintah. Contoh: <code>Ahmad Petugas PB3R</code>');
+
+                return;
+            }
+
+            $payload['display_name'] = $name;
+            $this->putConversation($telegramId, 'daftar', 'awaiting_license', null, $payload);
+            $this->reply(
+                $chatId,
+                "Terima kasih, <b>{$this->e($name)}</b>.\n\n"
+                .'Masukkan <b>kode lisensi</b> dari admin portal.\nContoh: <code>SITABA-XXXX-XXXX-XXXX</code>'
+            );
+
+            return;
+        }
+
+        if ($conversation->step === 'awaiting_license') {
+            $this->redeemLicense($telegramId, $chatId, $text, [], $payload['display_name'] ?? null);
+
+            return;
+        }
+
+        $this->startDaftar($telegramId, $chatId);
     }
 
     private function isLicenseCommand(string $text): bool
@@ -2181,12 +2203,12 @@ class TelegramBotService
     /**
      * @param  array<string, mixed>  $from
      */
-    private function redeemLicense(int $telegramId, int|string $chatId, string $text, array $from): void
+    private function redeemLicense(int $telegramId, int|string $chatId, string $text, array $from, ?string $displayName = null): void
     {
         $key = $this->extractLicenseKey($text);
 
         if ($key === null) {
-            $this->reply($chatId, 'Kirim kode lisensi dari admin portal.\nContoh: <code>/lisensi SITABA-XXXX-XXXX-XXXX</code>');
+            $this->reply($chatId, 'Kode lisensi belum terbaca. Kirim kode dari admin portal.\nContoh: <code>SITABA-XXXX-XXXX-XXXX</code>');
 
             return;
         }
@@ -2205,20 +2227,26 @@ class TelegramBotService
             return;
         }
 
+        $name = trim((string) $displayName);
+        if ($name === '') {
+            $name = $user->name;
+        }
+
         $user->forceFill(['telegram_id' => $telegramId])->save();
 
         TelegramWhitelist::query()->updateOrCreate(
             ['telegram_chat_id' => (string) $telegramId],
             [
-                'user_name' => $user->name,
+                'user_name' => $name,
                 'role' => $user->role->telegramRole(),
                 'is_active' => true,
             ]
         );
 
+        $this->clearConversation($telegramId);
         $this->reply(
             $chatId,
-            "✅ Lisensi bot aktif untuk <b>{$this->e($user->name)}</b> ({$user->role->label()}).\n\nKetik /start untuk membuka menu."
+            "✅ Selamat datang, <b>{$this->e($name)}</b>. Lisensi bot aktif ({$user->role->label()}).\n\nKetik /start untuk membuka menu."
         );
     }
 

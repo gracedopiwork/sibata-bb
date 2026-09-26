@@ -6,6 +6,7 @@ use App\Enums\TelegramAccessRole;
 use App\Http\Requests\StoreTelegramWhitelistRequest;
 use App\Http\Requests\UpdateTelegramWhitelistRequest;
 use App\Models\TelegramWhitelist;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -55,8 +56,12 @@ class TelegramWhitelistController extends Controller
 
     public function destroy(TelegramWhitelist $whitelist): RedirectResponse
     {
+        User::query()
+            ->where('telegram_id', $whitelist->telegram_chat_id)
+            ->update(['telegram_id' => null]);
+
         $whitelist->delete();
 
-        return redirect()->route('whitelist.index')->with('status', 'Akses Telegram dihapus.');
+        return redirect()->route('whitelist.index')->with('status', 'Akses Telegram dihapus. Orang itu harus daftar ulang: nama lalu kode lisensi.');
     }
 }

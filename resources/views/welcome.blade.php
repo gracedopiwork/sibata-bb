@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SITABA-BB — Kejaksaan Negeri Wajo</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-sitaba-bb-mark.svg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-sitaba-bb-mark.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|source-serif-4:600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -12,7 +12,7 @@
 <body class="bg-navy-900 text-white">
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,162,39,0.16),transparent_40%)]"></div>
     <div class="relative mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-16">
-        <img src="{{ asset('images/logo-sitaba-bb.svg') }}" alt="Logo SITABA-BB" class="h-32 w-32 rounded-full ring-1 ring-gold-500/40">
+        <img src="{{ asset('images/logo-sitaba-bb.png') }}" alt="Logo SITABA-BB" class="h-32 w-32 rounded-full bg-white object-cover ring-1 ring-gold-500/40">
         <p class="mt-6 text-xs font-bold uppercase tracking-[0.3em] text-gold-400">Seksi PB3R · Kejaksaan Negeri Wajo</p>
         <h1 class="mt-4 font-serif text-5xl">SITABA-BB</h1>
         <p class="mt-4 max-w-2xl text-lg text-navy-100/80">Sistem Informasi Tata Kelola Barang Bukti. Pencatatan lapangan lewat bot Telegram, administrasi desktop untuk cetak label QR, laporan, dan analitik gudang PB3R.</p>

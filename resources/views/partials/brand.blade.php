@@ -2,7 +2,7 @@
     $size = $size ?? 48;
     $showText = $showText ?? true;
     $mark = $mark ?? false;
-    $src = $mark ? asset('images/logo-sitaba-bb-mark.svg') : asset('images/logo-sitaba-bb.svg');
+    $src = $mark ? asset('images/logo-sitaba-bb-mark.png') : asset('images/logo-sitaba-bb.png');
 @endphp
 <div class="flex items-center gap-3 {{ $class ?? '' }}">
     <img src="{{ $src }}" alt="Logo SITABA-BB" width="{{ $size }}" height="{{ $size }}" class="shrink-0 rounded-full ring-1 ring-gold-500/40">
