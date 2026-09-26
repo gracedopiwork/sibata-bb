@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Logo SITABA-BB Kejaksaan Negeri Wajo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Logo SIBATA-BB Kejaksaan Negeri Wajo">
   <defs>
     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#f3d98a"/>
@@ -75,7 +75,7 @@
 
   <!-- ribbon -->
   <path d="M118 318 C150 304 362 304 394 318 L378 356 C340 342 172 342 134 356 Z" fill="#f4efe0" stroke="#c9a227" stroke-width="2"/>
-  <text x="256" y="344" text-anchor="middle" fill="#0b1f3a" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="700" letter-spacing="2">SITABA-BB</text>
+  <text x="256" y="344" text-anchor="middle" fill="#0b1f3a" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="700" letter-spacing="2">SIBATA-BB</text>
   <text x="256" y="378" text-anchor="middle" fill="#0b1f3a" font-family="Georgia, 'Times New Roman', serif" font-size="10" font-weight="700" letter-spacing="1.4">SISTEM TATA KELOLA</text>
   <text x="256" y="394" text-anchor="middle" fill="#0b1f3a" font-family="Georgia, 'Times New Roman', serif" font-size="10" font-weight="700" letter-spacing="1.4">BARANG BUKTI</text>
 </svg>

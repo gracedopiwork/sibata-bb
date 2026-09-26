@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SITABA-BB">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SIBATA-BB">
   <circle cx="256" cy="256" r="248" fill="#0b1f3a"/>
   <circle cx="256" cy="256" r="248" fill="none" stroke="#c9a227" stroke-width="16"/>
   <circle cx="256" cy="256" r="210" fill="#fffdf6"/>
@@ -8,5 +8,5 @@
   <rect x="210" y="188" width="36" height="58" rx="8" fill="#fff" stroke="#c9a227" stroke-width="4"/>
   <circle cx="228" cy="216" r="7" fill="#0b1f3a"/>
   <path d="M118 328 C160 308 352 308 394 328 L376 372 C336 354 176 354 136 372 Z" fill="#f4efe0" stroke="#c9a227" stroke-width="3"/>
-  <text x="256" y="360" text-anchor="middle" fill="#0b1f3a" font-family="Georgia, serif" font-size="32" font-weight="700">SITABA-BB</text>
+  <text x="256" y="360" text-anchor="middle" fill="#0b1f3a" font-family="Georgia, serif" font-size="32" font-weight="700">SIBATA-BB</text>
 </svg>
