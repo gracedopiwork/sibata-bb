@@ -46,7 +46,7 @@
         </div>
     </form>
     @if($user->id !== auth()->id())
-        <form method="POST" action="{{ route('users.destroy', $user) }}" class="mt-6" onsubmit="return confirm('Hapus pengguna ini?')">
+        <form method="POST" action="{{ route('users.destroy', $user) }}" class="mt-6" onsubmit="return confirm('Hapus pengguna ini beserta akses Telegramnya?')">
             @csrf
             @method('DELETE')
             <button class="btn-danger">Hapus pengguna</button>

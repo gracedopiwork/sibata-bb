@@ -13,10 +13,8 @@ use Illuminate\View\View;
 
 class TelegramWhitelistController extends Controller
 {
-    public function index(TelegramAccessUserSync $sync): View
+    public function index(): View
     {
-        $sync->syncAll();
-
         return view('whitelist.index', [
             'entries' => TelegramWhitelist::query()->with('linkedUser')->latest()->paginate(20),
         ]);

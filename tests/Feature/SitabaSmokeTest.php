@@ -112,31 +112,104 @@ class SitabaSmokeTest extends TestCase
         $created?->delete();
     }
 
-    public function test_orphan_telegram_access_gets_a_user_and_license(): void
+    public function test_adding_telegram_access_creates_a_user_and_deleting_user_removes_both(): void
     {
         $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
 
-        TelegramWhitelist::query()->create([
-            'telegram_chat_id' => '17947501477',
+        $this->actingAs($admin)->post('/whitelist', [
             'user_name' => 'Syawal',
-            'role' => TelegramAccessRole::AdminPb3r,
-            'is_active' => true,
-        ]);
-
-        $this->actingAs($admin)->get('/users')->assertOk()->assertSee('Syawal');
+            'telegram_chat_id' => '17947501477',
+            'role' => TelegramAccessRole::AdminPb3r->value,
+            'is_active' => '1',
+        ])->assertRedirect('/whitelist');
 
         $created = User::query()->where('telegram_id', 17947501477)->first();
 
         $this->assertNotNull($created);
         $this->assertTrue($created->hasValidLicense());
-        $this->assertStringStartsWith('SIBATA-', (string) $created->license_key);
 
-        $created->delete();
-        TelegramWhitelist::query()->where('telegram_chat_id', '17947501477')->delete();
+        $this->actingAs($admin)->delete('/users/'.$created->id)->assertRedirect('/users');
+
+        $this->assertDatabaseMissing('users', ['telegram_id' => 17947501477]);
+        $this->assertDatabaseMissing('telegram_whitelist', ['telegram_chat_id' => '17947501477']);
+
+        $this->actingAs($admin)->get('/users')->assertOk()->assertDontSee('Syawal');
+    }
+
+    public function test_bot_unknown_name_does_not_open_license_and_known_name_requires_matching_key(): void
+    {
+        $target = User::factory()->create([
+            'name' => 'Syawal Uji',
+            'role' => UserRole::PetugasPb3r,
+            'is_active' => true,
+            'password' => 'password',
+        ]);
+        $other = User::factory()->create([
+            'name' => 'Petugas Lain',
+            'role' => UserRole::PetugasPb3r,
+            'is_active' => true,
+            'password' => 'password',
+        ]);
+
+        $this->postJson('/api/telegram/webhook', [
+            'message' => [
+                'from' => ['id' => 888111222, 'first_name' => 'Tamu'],
+                'chat' => ['id' => 888111222],
+                'text' => '/start',
+            ],
+        ])->assertOk();
+
+        $this->postJson('/api/telegram/webhook', [
+            'message' => [
+                'from' => ['id' => 888111222, 'first_name' => 'Tamu'],
+                'chat' => ['id' => 888111222],
+                'text' => 'Nama Tidak Ada',
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('users', ['telegram_id' => 888111222]);
+
+        $this->postJson('/api/telegram/webhook', [
+            'message' => [
+                'from' => ['id' => 888111222, 'first_name' => 'Tamu'],
+                'chat' => ['id' => 888111222],
+                'text' => 'Syawal Uji',
+            ],
+        ])->assertOk();
+
+        $this->postJson('/api/telegram/webhook', [
+            'message' => [
+                'from' => ['id' => 888111222, 'first_name' => 'Tamu'],
+                'chat' => ['id' => 888111222],
+                'text' => $other->license_key,
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('users', ['telegram_id' => 888111222]);
+
+        $this->postJson('/api/telegram/webhook', [
+            'message' => [
+                'from' => ['id' => 888111222, 'first_name' => 'Tamu'],
+                'chat' => ['id' => 888111222],
+                'text' => $target->license_key,
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $target->id,
+            'telegram_id' => 888111222,
+        ]);
+
+        $target->delete();
+        $other->delete();
+        TelegramWhitelist::query()->where('telegram_chat_id', '888111222')->delete();
     }
 
     public function test_bot_license_can_be_redeemed_and_revoked(): void
     {
+        User::query()->where('telegram_id', 555666777)->update(['telegram_id' => null]);
+        TelegramWhitelist::query()->where('telegram_chat_id', '555666777')->delete();
+
         $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
         $target = User::factory()->create([
             'role' => UserRole::PetugasPb3r,

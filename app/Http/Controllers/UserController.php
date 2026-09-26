@@ -5,24 +5,15 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\TelegramWhitelist;
 use App\Models\User;
-use App\Services\TelegramAccessUserSync;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    public function index(TelegramAccessUserSync $sync): View
+    public function index(): View
     {
-        $created = $sync->syncAll();
-
-        if ($created > 0) {
-            session()->now(
-                'status',
-                $created.' akun pengguna dibuat dari Akses Telegram yang belum punya lisensi. Kode lisensi ada di kolom Lisensi.'
-            );
-        }
-
         return view('users.index', [
             'users' => User::query()->latest()->paginate(15),
         ]);
@@ -77,9 +68,15 @@ class UserController extends Controller
     {
         abort_if($user->id === auth()->id(), 422, 'Tidak dapat menghapus akun sendiri.');
 
+        if ($user->telegram_id) {
+            TelegramWhitelist::query()
+                ->where('telegram_chat_id', (string) $user->telegram_id)
+                ->delete();
+        }
+
         $user->delete();
 
-        return redirect()->route('users.index')->with('status', 'Pengguna dihapus.');
+        return redirect()->route('users.index')->with('status', 'Pengguna dan akses Telegramnya dihapus.');
     }
 
     public function regenerateLicense(User $user): RedirectResponse

@@ -125,13 +125,28 @@ class TelegramBotService
                 return;
             }
 
-            $pendingName = TelegramConversation::query()
+            $daftar = TelegramConversation::query()
                 ->where('telegram_user_id', $telegramId)
                 ->where('action', 'daftar')
-                ->value('payload');
-            $displayName = is_array($pendingName) ? (string) ($pendingName['display_name'] ?? '') : '';
+                ->first();
 
-            $this->redeemLicense($telegramId, $chatId, $text, $from, $displayName !== '' ? $displayName : null);
+            if (str_starts_with($text, '/lisensi')) {
+                $this->redeemLicense($telegramId, $chatId, $text, $from);
+
+                return;
+            }
+
+            if ($daftar?->step === 'awaiting_name') {
+                $this->reply($chatId, 'Masukkan <b>nama akun</b> di portal terlebih dahulu, baru kode lisensi.');
+
+                return;
+            }
+
+            $payload = is_array($daftar?->payload) ? $daftar->payload : [];
+            $expectedUserId = isset($payload['user_id']) ? (int) $payload['user_id'] : null;
+            $displayName = (string) ($payload['display_name'] ?? '');
+
+            $this->redeemLicense($telegramId, $chatId, $text, $from, $displayName !== '' ? $displayName : null, $expectedUserId);
 
             return;
         }
@@ -2128,7 +2143,7 @@ class TelegramBotService
             $chatId,
             "Selamat datang di Bot <b>SIBATA-BB</b>.\n"
             ."Sistem Informasi Barang Bukti dan Barang Rampasan — Seksi PB3R Kejari Wajo.\n\n"
-            .'Masukkan <b>nama Anda</b>.'
+            .'Masukkan <b>nama akun</b> Anda sesuai yang tercatat di portal.'
         );
     }
 
@@ -2137,37 +2152,79 @@ class TelegramBotService
         $payload = $conversation->payload ?? [];
 
         if ($conversation->step === 'awaiting_name') {
-            if ($this->extractLicenseKey($text) !== null) {
-                $this->redeemLicense($telegramId, $chatId, $text, [], $payload['display_name'] ?? null);
-
-                return;
-            }
-
             $name = trim($text);
             if ($name === '' || str_starts_with($name, '/')) {
-                $this->reply($chatId, 'Masukkan nama Anda, bukan perintah. Contoh: <code>Ahmad Petugas PB3R</code>');
+                $this->reply($chatId, 'Masukkan nama akun di portal, bukan perintah. Contoh: <code>Syawal</code>');
 
                 return;
             }
 
-            $payload['display_name'] = $name;
+            $matches = $this->findPortalUsersByName($name);
+
+            if ($matches->isEmpty()) {
+                $this->putConversation($telegramId, 'daftar', 'awaiting_name');
+                $this->reply(
+                    $chatId,
+                    "Nama <b>{$this->e($name)}</b> belum ada di portal.\n\n"
+                    .'Minta administrator menambahkan Anda di menu <b>Pengguna &amp; Lisensi</b>, lalu ketik /start lagi.'
+                );
+
+                return;
+            }
+
+            if ($matches->count() > 1) {
+                $this->reply($chatId, 'Nama itu dipakai lebih dari satu akun. Minta admin merapikan nama di portal, atau kirim nama yang unik.');
+
+                return;
+            }
+
+            $user = $matches->first();
+
+            if (! $user->is_active) {
+                $this->reply($chatId, "Akun <b>{$this->e($user->name)}</b> nonaktif. Minta administrator mengaktifkannya di portal.");
+
+                return;
+            }
+
+            if (! $user->hasValidLicense()) {
+                $this->reply($chatId, "Akun <b>{$this->e($user->name)}</b> ditemukan, tetapi lisensinya belum berlaku. Minta administrator menerbitkan lisensi di portal.");
+
+                return;
+            }
+
+            $payload['display_name'] = $user->name;
+            $payload['user_id'] = $user->id;
             $this->putConversation($telegramId, 'daftar', 'awaiting_license', null, $payload);
             $this->reply(
                 $chatId,
-                "Terima kasih, <b>{$this->e($name)}</b>.\n\n"
-                .'Masukkan <b>kode lisensi</b> dari admin portal.\nContoh: <code>SIBATA-XXXX-XXXX-XXXX</code>'
+                "Nama <b>{$this->e($user->name)}</b> ditemukan.\n\n"
+                .'Masukkan <b>kode lisensi</b> dari menu Pengguna &amp; Lisensi.\nContoh: <code>SIBATA-XXXX-XXXX-XXXX</code>'
             );
 
             return;
         }
 
         if ($conversation->step === 'awaiting_license') {
-            $this->redeemLicense($telegramId, $chatId, $text, [], $payload['display_name'] ?? null);
+            $expectedUserId = isset($payload['user_id']) ? (int) $payload['user_id'] : null;
+            $this->redeemLicense($telegramId, $chatId, $text, [], $payload['display_name'] ?? null, $expectedUserId);
 
             return;
         }
 
         $this->startDaftar($telegramId, $chatId);
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    private function findPortalUsersByName(string $name)
+    {
+        $needle = mb_strtolower(trim($name), 'UTF-8');
+
+        return User::query()
+            ->get()
+            ->filter(fn (User $user): bool => mb_strtolower(trim((string) $user->name), 'UTF-8') === $needle)
+            ->values();
     }
 
     private function isLicenseCommand(string $text): bool
@@ -2190,7 +2247,7 @@ class TelegramBotService
     /**
      * @param  array<string, mixed>  $from
      */
-    private function redeemLicense(int $telegramId, int|string $chatId, string $text, array $from, ?string $displayName = null): void
+    private function redeemLicense(int $telegramId, int|string $chatId, string $text, array $from, ?string $displayName = null, ?int $expectedUserId = null): void
     {
         $key = $this->extractLicenseKey($text);
 
@@ -2204,6 +2261,12 @@ class TelegramBotService
 
         if ($user === null || ! $user->hasValidLicense() || ! $user->is_active) {
             $this->reply($chatId, 'Kode lisensi tidak valid atau sudah dicabut. Hubungi administrator portal.');
+
+            return;
+        }
+
+        if ($expectedUserId !== null && $user->id !== $expectedUserId) {
+            $this->reply($chatId, 'Kode lisensi ini tidak sesuai dengan nama yang Anda masukkan. Minta kode milik akun Anda di portal.');
 
             return;
         }
