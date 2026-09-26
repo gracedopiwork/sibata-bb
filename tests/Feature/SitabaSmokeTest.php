@@ -18,7 +18,7 @@ class SitabaSmokeTest extends TestCase
 {
     public function test_login_page_is_visible(): void
     {
-        $this->get('/login')->assertOk()->assertSee('SITABA-BB');
+        $this->get('/login')->assertOk()->assertSee('SIBATA-BB');
     }
 
     public function test_guest_is_redirected_from_dashboard(): void
@@ -105,7 +105,7 @@ class SitabaSmokeTest extends TestCase
 
         $this->assertNotEmpty($created?->license_key);
         $this->assertTrue($created?->hasValidLicense());
-        $this->assertStringStartsWith('SITABA-', (string) $created?->license_key);
+        $this->assertStringStartsWith('SIBATA-', (string) $created?->license_key);
 
         $created?->delete();
     }

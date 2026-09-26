@@ -11,7 +11,7 @@ class UserLicense
     {
         $chunk = static fn (): string => strtoupper(Str::random(4));
 
-        return 'SITABA-'.$chunk().'-'.$chunk().'-'.$chunk();
+        return 'SIBATA-'.$chunk().'-'.$chunk().'-'.$chunk();
     }
 
     public static function uniqueKey(): string

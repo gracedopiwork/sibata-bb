@@ -2,7 +2,7 @@
 
 @section('title', 'Akses Telegram')
 @section('heading', 'Akses Telegram')
-@section('subheading', 'Daftar putih petugas yang boleh memakai bot SITABA-BB')
+@section('subheading', 'Daftar putih petugas yang boleh memakai bot SIBATA-BB')
 
 @section('content')
 @php

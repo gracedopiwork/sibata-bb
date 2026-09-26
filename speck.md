@@ -1,10 +1,10 @@
-# SITABA-BB (Sistem Informasi Tata Kelola Barang Bukti Kejari Wajo)
+# SIBATA-BB (Sistem Informasi Barang Bukti dan Barang Rampasan Kejari Wajo)
 # Technical Specification & Architecture Blueprint for Cursor AI
 
 You are a Senior Fullstack Laravel & Telegram Bot Engineer. Implement the following project specification strictly using the Laravel ecosystem.
 
 ## 1. Project Overview & Scope
-- Project Name: SITABA-BB (Sistem Informasi Tata Kelola Barang Bukti)
+- Project Name: SIBATA-BB (Sistem Informasi Barang Bukti dan Barang Rampasan)
 - Institution: Seksi PB3R (Pengelolaan Barang Bukti dan Barang Rampasan), Kejaksaan Negeri Wajo
 - Core Mission: Eliminate desk scanner limitations and manual paper books by introducing mobile QR-scanning via Telegram Bot, auto-generating standard printable labels, and maintaining end-to-end evidence logs from Tahap II to Inkracht execution.
 
@@ -72,7 +72,7 @@ You are a Senior Fullstack Laravel & Telegram Bot Engineer. Implement the follow
 2. The controller reads `photo` array (takes largest resolution), fetches image via Telegram `getFile` API.
 3. Decodes the QR token directly from the image using the server-side QR reader.
 4. Queries `evidence_items` using `qr_token`:
-   - If not found: Respond: "Barang bukti tidak terdaftar di sistem SITABA-BB."
+   - If not found: Respond: "Barang bukti tidak terdaftar di sistem SIBATA-BB."
    - If found:
      - Check current `status`:
        - If `status == 'TERSEDIA'`:

@@ -2,7 +2,7 @@
 
 @section('title', 'Tambah Akses Telegram')
 @section('heading', 'Tambah Akses Telegram')
-@section('subheading', 'Petugas yang boleh memakai bot SITABA-BB')
+@section('subheading', 'Petugas yang boleh memakai bot SIBATA-BB')
 
 @section('content')
 <div class="card max-w-2xl">

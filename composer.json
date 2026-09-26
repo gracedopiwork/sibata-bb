@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "kejari-wajo/sitaba-bb",
     "type": "project",
-    "description": "SITABA-BB — Sistem Informasi Tata Kelola Barang Bukti Kejaksaan Negeri Wajo",
+    "description": "SIBATA-BB — Sistem Informasi Barang Bukti dan Barang Rampasan Kejaksaan Negeri Wajo",
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {

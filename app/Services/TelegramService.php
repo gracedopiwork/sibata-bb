@@ -178,7 +178,7 @@ class TelegramService
     public function defaultCommands(): array
     {
         return [
-            ['command' => 'start', 'description' => 'Menu utama SITABA-BB'],
+            ['command' => 'start', 'description' => 'Menu utama SIBATA-BB'],
             ['command' => 'tambah', 'description' => 'Daftar perkara & barang bukti'],
             ['command' => 'cari', 'description' => 'Cari unit / perkara'],
             ['command' => 'pinjam', 'description' => 'Pinjam sidang'],

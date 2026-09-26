@@ -7,10 +7,10 @@
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(201,162,39,0.18),transparent_32%),linear-gradient(160deg,#07111f,#0b1f3a_46%,#122a4a)]"></div>
     <div class="relative mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-6 py-12 lg:grid-cols-2">
         <div>
-            <img src="{{ asset('images/logo-sitaba-bb.png') }}" alt="Logo SITABA-BB" class="h-36 w-36 rounded-full bg-white object-cover ring-1 ring-gold-500/40 shadow-2xl">
+            <img src="{{ asset('images/logo-sitaba-bb.png') }}" alt="Logo SIBATA-BB" class="h-36 w-36 rounded-full bg-white object-cover ring-1 ring-gold-500/40 shadow-2xl">
             <p class="mt-5 text-xs font-bold uppercase tracking-[0.28em] text-gold-400">Kejaksaan Negeri Wajo</p>
-            <h1 class="mt-3 font-serif text-4xl leading-tight text-white md:text-5xl">SITABA-BB</h1>
-            <p class="mt-4 max-w-md text-navy-100/80">Sistem Informasi Tata Kelola Barang Bukti — dual akses Telegram (lapangan) dan portal web (administrasi) untuk Seksi PB3R Kejaksaan Negeri Wajo.</p>
+            <h1 class="mt-3 font-serif text-4xl leading-tight text-white md:text-5xl">SIBATA-BB</h1>
+            <p class="mt-4 max-w-md text-navy-100/80">Sistem Informasi Barang Bukti dan Barang Rampasan — dual akses Telegram (lapangan) dan portal web (administrasi) untuk Seksi PB3R Kejaksaan Negeri Wajo.</p>
             <ul class="mt-8 space-y-2 text-sm text-navy-100/70">
                 <li>• Unit mandiri (BB) dan paket/wadah (PKT) dengan satu stiker QR</li>
                 <li>• Peminjaman sidang, pengembalian, dan eksekusi putusan</li>

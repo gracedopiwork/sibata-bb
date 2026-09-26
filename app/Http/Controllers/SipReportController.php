@@ -30,7 +30,7 @@ class SipReportController extends Controller
     {
         return Excel::download(
             new SipRegisterExport($this->query($request)),
-            'register-pb3r-sitaba-bb.xlsx'
+            'register-pb3r-sibata-bb.xlsx'
         );
     }
 

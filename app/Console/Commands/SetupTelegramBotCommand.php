@@ -10,7 +10,7 @@ class SetupTelegramBotCommand extends Command
 {
     protected $signature = 'telegram:setup {token? : Token dari @BotFather}';
 
-    protected $description = 'Simpan token BotFather, daftarkan menu perintah, dan siapkan bot SITABA-BB';
+    protected $description = 'Simpan token BotFather, daftarkan menu perintah, dan siapkan bot SIBATA-BB';
 
     public function handle(TelegramService $telegram): int
     {
@@ -20,8 +20,8 @@ class SetupTelegramBotCommand extends Command
             $this->warn('Token masih kosong. Buat bot dulu di Telegram:');
             $this->line('  1. Buka Telegram, cari @BotFather');
             $this->line('  2. Ketik /newbot');
-            $this->line('  3. Nama: SITABA-BB Kejari Wajo');
-            $this->line('  4. Username: misalnya SitabaWajoBot (harus berakhiran bot)');
+            $this->line('  3. Nama: SIBATA-BB Kejari Wajo');
+            $this->line('  4. Username: misalnya SibataWajoBot (harus berakhiran bot)');
             $this->line('  5. Salin token yang diberikan BotFather');
             $this->newLine();
 
@@ -40,7 +40,7 @@ class SetupTelegramBotCommand extends Command
             $me = $telegram->getMe();
             $result = is_array($me['result'] ?? null) ? $me['result'] : [];
             $username = (string) ($result['username'] ?? 'bot');
-            $name = (string) ($result['first_name'] ?? 'SITABA-BB');
+            $name = (string) ($result['first_name'] ?? 'SIBATA-BB');
 
             $telegram->deleteWebhook(true);
             $telegram->setMyCommands($telegram->defaultCommands());

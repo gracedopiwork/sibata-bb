@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
                 'nip' => '199001012015031001',
                 'role' => UserRole::Admin,
                 'is_active' => true,
-                'license_key' => 'SITABA-ADMIN-WAJO-2026',
+                'license_key' => 'SIBATA-ADMIN-WAJO-2026',
                 'license_issued_at' => now(),
                 'password' => Hash::make('password'),
             ]

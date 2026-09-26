@@ -81,7 +81,7 @@ class TelegramBotService
 
         $this->telegram->sendMessage(
             $chatId,
-            "✅ Bot <b>SITABA-BB</b> sudah masuk {$this->e($title)}.\n\n"
+            "✅ Bot <b>SIBATA-BB</b> sudah masuk {$this->e($title)}.\n\n"
             ."ID grup: <code>{$chatId}</code>\n\n"
             ."Agar bot membaca <b>foto QR</b> di grup, set privacy BotFather ke <b>Disable</b> dan jadikan bot admin.\n\n"
             .'Ketik /id untuk melihat ID grup.'
@@ -231,7 +231,7 @@ class TelegramBotService
 
         $this->reply(
             $chatId,
-            "Perintah SITABA-BB:\n/tambah — daftar perkara & BB\n/cari kata — cari\n/pinjam KODE — pinjam sidang\n/kembali KODE — kembali gudang\n/eksekusi KODE — catat putusan\n/rekap — ringkasan gudang\n\nAtau kirim foto stiker QR / kode unit."
+            "Perintah SIBATA-BB:\n/tambah — daftar perkara & BB\n/cari kata — cari\n/pinjam KODE — pinjam sidang\n/kembali KODE — kembali gudang\n/eksekusi KODE — catat putusan\n/rekap — ringkasan gudang\n\nAtau kirim foto stiker QR / kode unit."
         );
     }
 
@@ -1610,7 +1610,7 @@ class TelegramBotService
 
         $this->reply(
             $chatId,
-            "📊 <b>Rekap gudang SITABA-BB</b>\n"
+            "📊 <b>Rekap gudang SIBATA-BB</b>\n"
             ."Perkara: <b>{$cases}</b>\n"
             ."Tersimpan gudang: <b>{$gudang}</b>\n"
             ."Dipinjam sidang: <b>{$pinjam}</b>\n"
@@ -1644,7 +1644,7 @@ class TelegramBotService
     private function respondWithUnit(int|string $chatId, ?PhysicalUnit $unit): void
     {
         if ($unit === null) {
-            $this->reply($chatId, 'Unit fisik tidak ditemukan di SITABA-BB.');
+            $this->reply($chatId, 'Unit fisik tidak ditemukan di SIBATA-BB.');
 
             return;
         }
@@ -1671,7 +1671,7 @@ class TelegramBotService
                 "QR {$unit->unit_code}"
             );
         } catch (Throwable $exception) {
-            Log::warning('Failed sending SITABA-BB QR photo.', ['message' => $exception->getMessage()]);
+            Log::warning('Failed sending SIBATA-BB QR photo.', ['message' => $exception->getMessage()]);
         }
     }
 
@@ -2168,7 +2168,7 @@ class TelegramBotService
             $this->reply(
                 $chatId,
                 "Terima kasih, <b>{$this->e($name)}</b>.\n\n"
-                .'Masukkan <b>kode lisensi</b> dari admin portal.\nContoh: <code>SITABA-XXXX-XXXX-XXXX</code>'
+                .'Masukkan <b>kode lisensi</b> dari admin portal.\nContoh: <code>SIBATA-XXXX-XXXX-XXXX</code>'
             );
 
             return;
@@ -2193,7 +2193,7 @@ class TelegramBotService
         $normalized = UserLicense::normalize($text);
         $normalized = (string) preg_replace('/^\/LISENSI/', '', $normalized);
 
-        if (preg_match('/SITABA(?:-[A-Z0-9]+){2,}/', $normalized, $matches) === 1) {
+        if (preg_match('/SI(?:TABA|BATA)(?:-[A-Z0-9]+){2,}/', $normalized, $matches) === 1) {
             return $matches[0];
         }
 
@@ -2208,7 +2208,7 @@ class TelegramBotService
         $key = $this->extractLicenseKey($text);
 
         if ($key === null) {
-            $this->reply($chatId, 'Kode lisensi belum terbaca. Kirim kode dari admin portal.\nContoh: <code>SITABA-XXXX-XXXX-XXXX</code>');
+            $this->reply($chatId, 'Kode lisensi belum terbaca. Kirim kode dari admin portal.\nContoh: <code>SIBATA-XXXX-XXXX-XXXX</code>');
 
             return;
         }
@@ -2254,8 +2254,8 @@ class TelegramBotService
     {
         $extra = $inGroup ? "\n/id — tampilkan ID grup ini" : '';
 
-        return "Selamat datang di <b>SITABA-BB</b>, {$this->e($actor->user_name)} ({$actor->role->label()}).\n\n"
-            ."Sistem Informasi Tata Kelola Barang Bukti — Seksi PB3R Kejari Wajo.\n\n"
+        return "Selamat datang di <b>SIBATA-BB</b>, {$this->e($actor->user_name)} ({$actor->role->label()}).\n\n"
+            ."Sistem Informasi Barang Bukti dan Barang Rampasan — Seksi PB3R Kejari Wajo.\n\n"
             ."Perintah:\n/tambah /cari /pinjam /kembali /eksekusi /rekap\n/lisensi — aktifkan akses bot\n/batal — batalkan proses{$extra}";
     }
 

@@ -11,7 +11,7 @@ class PollTelegramBotCommand extends Command
 {
     protected $signature = 'telegram:poll {--once : Ambil satu batch lalu berhenti}';
 
-    protected $description = 'Jalankan bot SITABA-BB secara lokal dengan long polling';
+    protected $description = 'Jalankan bot SIBATA-BB secara lokal dengan long polling';
 
     public function handle(TelegramService $telegram, TelegramBotService $bot): int
     {
@@ -31,7 +31,7 @@ class PollTelegramBotCommand extends Command
         }
 
         $username = (string) (($me['result']['username'] ?? null) ?: 'bot');
-        $this->info("SITABA-BB mendengarkan @{$username}. Ketik /start di Telegram. Ctrl+C untuk berhenti.");
+        $this->info("SIBATA-BB mendengarkan @{$username}. Ketik /start di Telegram. Ctrl+C untuk berhenti.");
 
         $offset = 0;
 
