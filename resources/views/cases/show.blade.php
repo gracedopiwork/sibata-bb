@@ -23,34 +23,53 @@
         @endif
     </div>
     <div class="card lg:col-span-2">
-        <h3 class="font-serif text-lg">Unit fisik</h3>
-        <div class="mt-4 divide-y divide-navy-100">
+        <h3 class="font-serif text-lg">Daftar barang bukti</h3>
+        <p class="mt-1 text-xs text-navy-500">Satu perkara boleh punya BB mandiri (BB-…) dan paket/segel (PKT-…) sekaligus.</p>
+        <div class="mt-4 space-y-5">
             @forelse ($case->physicalUnits as $unit)
-                <div class="flex flex-wrap items-start justify-between gap-3 py-3">
-                    <div class="flex min-w-0 flex-1 gap-3">
-                        @if($unit->hasPhoto())
-                            <a href="{{ route('units.show', $unit) }}" class="shrink-0">
-                                <img class="h-16 w-16 rounded-lg object-cover" src="{{ $unit->photoUrl() }}" alt="Foto {{ $unit->unit_code }}">
+                <article class="rounded-2xl border border-navy-100 bg-navy-50/40 p-4">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="flex min-w-0 flex-1 gap-3">
+                            @if($unit->hasPhoto())
+                                <a href="{{ route('units.show', $unit) }}" class="shrink-0">
+                                    <img class="h-16 w-16 rounded-lg object-cover" src="{{ $unit->photoUrl() }}" alt="Foto {{ $unit->unit_code }}">
+                                </a>
+                            @endif
+                            <div class="min-w-0">
+                                <a class="font-semibold text-navy-900" href="{{ route('units.show', $unit) }}">{{ $unit->unit_code }}</a>
+                                <p class="text-xs text-navy-500">{{ $unit->unit_type->label() }} · {{ $unit->storageLocation?->name ?? $unit->storage_location }}</p>
+                                @unless($unit->hasPhoto())
+                                    <p class="mt-1 text-xs text-navy-500">Belum ada foto — unggah di halaman unit.</p>
+                                @endunless
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            <span class="{{ $unit->current_status->badgeClass() }}">{{ $unit->current_status->label() }}</span>
+                            <a class="text-sm font-semibold text-navy-800 hover:text-gold-600" href="{{ route('print-labels.sheet', ['ids' => $unit->id]) }}">
+                                {{ $unit->is_printed ? 'Cetak ulang' : 'Cetak label' }}
                             </a>
-                        @endif
-                        <div class="min-w-0">
-                            <a class="font-semibold text-navy-900" href="{{ route('units.show', $unit) }}">{{ $unit->unit_code }}</a>
-                            <p class="text-xs text-navy-500">{{ $unit->unit_type->label() }} · {{ $unit->storageLocation?->name ?? $unit->storage_location }}</p>
-                            <p class="item-copy mt-1">{{ $unit->itemsSummary(160) }}</p>
-                            @unless($unit->hasPhoto())
-                                <p class="mt-1 text-xs text-navy-500">Belum ada foto — unggah di halaman unit.</p>
-                            @endunless
                         </div>
                     </div>
-                    <div class="flex flex-col items-end gap-2">
-                        <span class="{{ $unit->current_status->badgeClass() }}">{{ $unit->current_status->label() }}</span>
-                        <a class="text-sm font-semibold text-navy-800 hover:text-gold-600" href="{{ route('print-labels.sheet', ['ids' => $unit->id]) }}">
-                            {{ $unit->is_printed ? 'Cetak ulang' : 'Cetak label' }}
-                        </a>
-                    </div>
-                </div>
+
+                    <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm">
+                        @forelse ($unit->items as $item)
+                            <li class="pl-1">
+                                <a class="item-copy font-medium text-navy-900 hover:text-gold-600" href="{{ route('items.show', $item) }}">{{ $item->displayName() }}</a>
+                                <p class="mt-0.5 text-xs text-navy-600">
+                                    {{ $item->categoryLabel() }}
+                                    @if($item->quantity)
+                                        · {{ $item->quantity }}
+                                    @endif
+                                    · {{ $item->verdict_status->label() }}
+                                </p>
+                            </li>
+                        @empty
+                            <li class="text-navy-500">Isi belum dicatat.</li>
+                        @endforelse
+                    </ol>
+                </article>
             @empty
-                <p class="py-4 text-sm text-navy-500">Belum ada unit fisik.</p>
+                <p class="py-4 text-sm text-navy-500">Belum ada barang bukti.</p>
             @endforelse
         </div>
     </div>
