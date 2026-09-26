@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\TelegramAccessRole;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TelegramWhitelist extends Model
 {
@@ -22,6 +23,11 @@ class TelegramWhitelist extends Model
             'role' => TelegramAccessRole::class,
             'is_active' => 'boolean',
         ];
+    }
+
+    public function linkedUser(): HasOne
+    {
+        return $this->hasOne(User::class, 'telegram_id', 'telegram_chat_id');
     }
 
     public static function findActive(int|string $telegramId): ?self

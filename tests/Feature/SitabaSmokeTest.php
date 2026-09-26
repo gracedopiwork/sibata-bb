@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TelegramAccessRole;
 use App\Enums\UserRole;
 use App\Models\AssetType;
 use App\Models\CaseType;
 use App\Models\PhysicalUnit;
 use App\Models\Prosecutor;
 use App\Models\StorageLocation;
+use App\Models\TelegramWhitelist;
 use App\Models\UnitItem;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -108,6 +110,29 @@ class SitabaSmokeTest extends TestCase
         $this->assertStringStartsWith('SIBATA-', (string) $created?->license_key);
 
         $created?->delete();
+    }
+
+    public function test_orphan_telegram_access_gets_a_user_and_license(): void
+    {
+        $admin = User::query()->where('email', 'admin@sibatabbwajo.my.id')->firstOrFail();
+
+        TelegramWhitelist::query()->create([
+            'telegram_chat_id' => '17947501477',
+            'user_name' => 'Syawal',
+            'role' => TelegramAccessRole::AdminPb3r,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->get('/users')->assertOk()->assertSee('Syawal');
+
+        $created = User::query()->where('telegram_id', 17947501477)->first();
+
+        $this->assertNotNull($created);
+        $this->assertTrue($created->hasValidLicense());
+        $this->assertStringStartsWith('SIBATA-', (string) $created->license_key);
+
+        $created->delete();
+        TelegramWhitelist::query()->where('telegram_chat_id', '17947501477')->delete();
     }
 
     public function test_bot_license_can_be_redeemed_and_revoked(): void

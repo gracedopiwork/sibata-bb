@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
                 'nip' => '199203152018032002',
                 'role' => UserRole::PetugasPb3r,
                 'is_active' => true,
+                'telegram_id' => 1001,
                 'password' => Hash::make('password'),
             ]
         );

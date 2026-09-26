@@ -7,15 +7,18 @@ use App\Http\Requests\StoreTelegramWhitelistRequest;
 use App\Http\Requests\UpdateTelegramWhitelistRequest;
 use App\Models\TelegramWhitelist;
 use App\Models\User;
+use App\Services\TelegramAccessUserSync;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class TelegramWhitelistController extends Controller
 {
-    public function index(): View
+    public function index(TelegramAccessUserSync $sync): View
     {
+        $sync->syncAll();
+
         return view('whitelist.index', [
-            'entries' => TelegramWhitelist::query()->latest()->paginate(20),
+            'entries' => TelegramWhitelist::query()->with('linkedUser')->latest()->paginate(20),
         ]);
     }
 
@@ -31,9 +34,10 @@ class TelegramWhitelistController extends Controller
         $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active', true);
 
-        TelegramWhitelist::query()->create($data);
+        $entry = TelegramWhitelist::query()->create($data);
+        app(TelegramAccessUserSync::class)->ensureUser($entry);
 
-        return redirect()->route('whitelist.index')->with('status', 'Akses Telegram ditambahkan.');
+        return redirect()->route('whitelist.index')->with('status', 'Akses Telegram ditambahkan. Akun pengguna dan kode lisensi ikut dibuat.');
     }
 
     public function edit(TelegramWhitelist $whitelist): View

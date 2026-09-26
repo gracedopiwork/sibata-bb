@@ -6,13 +6,23 @@ use App\Enums\UserRole;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use App\Services\TelegramAccessUserSync;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    public function index(): View
+    public function index(TelegramAccessUserSync $sync): View
     {
+        $created = $sync->syncAll();
+
+        if ($created > 0) {
+            session()->now(
+                'status',
+                $created.' akun pengguna dibuat dari Akses Telegram yang belum punya lisensi. Kode lisensi ada di kolom Lisensi.'
+            );
+        }
+
         return view('users.index', [
             'users' => User::query()->latest()->paginate(15),
         ]);
