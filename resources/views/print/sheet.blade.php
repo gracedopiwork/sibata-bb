@@ -8,7 +8,8 @@
         @page { size: A4; margin: 8mm; }
         * { box-sizing: border-box; }
         body { font-family: Arial, Helvetica, sans-serif; color: #0b1f3a; margin: 0; background: #f4efe4; }
-        .toolbar { padding: 12px 16px; background: #0b1f3a; color: white; display: flex; gap: 8px; align-items: center; }
+        .toolbar { padding: 12px 16px; background: #0b1f3a; color: white; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .toolbar p { margin: 0 12px 0 0; font-size: 13px; }
         .toolbar button, .toolbar a { background: #c9a227; color: #07111f; border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
         .sheet { display: grid; grid-template-columns: repeat(auto-fill, 70mm); gap: 6mm; padding: 12px; justify-content: center; }
         .label {
@@ -39,7 +40,8 @@
 </head>
 <body>
     <div class="toolbar">
-        <button type="button" onclick="window.print()">Cetak / cetak ulang</button>
+        <p>Pratinjau stiker — periksa dulu, lalu tekan Cetak.</p>
+        <button type="button" onclick="window.print()">Cetak</button>
         <form id="mark-printed" method="POST" action="{{ route('print-labels.printed') }}">
             @csrf
             @foreach ($ids as $id)
@@ -77,9 +79,6 @@
     <script>
         window.addEventListener('afterprint', function () {
             document.getElementById('mark-printed').submit();
-        });
-        window.addEventListener('load', function () {
-            window.print();
         });
     </script>
 </body>

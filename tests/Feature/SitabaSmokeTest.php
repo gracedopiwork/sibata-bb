@@ -429,6 +429,7 @@ class SitabaSmokeTest extends TestCase
             ->get(route('print-labels.sheet', ['ids' => $unit->id]))
             ->assertOk()
             ->assertSee('KEJAKSAAN NEGERI WAJO')
+            ->assertSee('Pratinjau stiker')
             ->assertSee($unit->unit_code);
     }
 
